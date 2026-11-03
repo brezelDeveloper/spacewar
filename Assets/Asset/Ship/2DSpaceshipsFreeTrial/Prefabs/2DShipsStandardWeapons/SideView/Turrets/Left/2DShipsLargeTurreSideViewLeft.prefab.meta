@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: ce137df07c07d304bb0fafc7f6f7cf09
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 146307
+  packageName: 2D Spaceships Free Trial
+  packageVersion: 1.0
+  assetPath: Assets/2DSpaceshipsFreeTrial/Prefabs/2DShipsStandardWeapons/SideView/Turrets/Left/2DShipsLargeTurreSideViewLeft.prefab
+  uploadId: 310928

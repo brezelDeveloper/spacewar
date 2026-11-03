@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: b26aed0f04fef024aa2a3a3edb5429f2
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 146307
+  packageName: 2D Spaceships Free Trial
+  packageVersion: 1.0
+  assetPath: Assets/2DSpaceshipsFreeTrial/Prefabs/2DSpaceshipsFreeTrialSideView/2DScifiDestroyerPhoenixSideViewMasterPrefab.prefab
+  uploadId: 310928
