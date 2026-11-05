@@ -2148,6 +2148,8 @@ GameObject:
   - component: {fileID: 992907821}
   - component: {fileID: 992907820}
   - component: {fileID: 992907826}
+  - component: {fileID: 992907827}
+  - component: {fileID: 992907828}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -2294,6 +2296,35 @@ MonoBehaviour:
   reflectRadius: 4
   blackHoleRadius: 6
   blackHoleDuration: 3
+--- !u!114 &992907827
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 992907819}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5dc1a4e81da06154b8092757714c0f8a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  spawnInterval: 0.05
+  ghostLifetime: 0.3
+  ghostColor: {r: 0, g: 1, b: 0.9, a: 0.6}
+--- !u!114 &992907828
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 992907819}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 970122afb8c40d84a8be678e90304664, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  hitVfxPrefab: {fileID: 4321763111560866550, guid: e61c85c6fb2e2c649ab19c9ba84bbc0f, type: 3}
+  whiteFlashMaterial: {fileID: 2100000, guid: 09f96ff512e81884bbc44cafd1b8b15d, type: 2}
 --- !u!1 &1036245272
 GameObject:
   m_ObjectHideFlags: 0
@@ -3305,6 +3336,7 @@ GameObject:
   - component: {fileID: 1329621676}
   - component: {fileID: 1329621675}
   - component: {fileID: 1329621674}
+  - component: {fileID: 1329621679}
   m_Layer: 0
   m_Name: Managers
   m_TagString: Untagged
@@ -3479,6 +3511,19 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1329621679
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1329621673}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e154079010ff73b46a4d15c50fc9dfff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  targetCamera: {fileID: 0}
 --- !u!1 &1406009248
 GameObject:
   m_ObjectHideFlags: 0

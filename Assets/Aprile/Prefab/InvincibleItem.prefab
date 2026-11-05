@@ -137,7 +137,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b70aa9941ac82f04dafaf169f86f4238, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  itemType: 0
+  itemType: 1
   itemWeight: 3
   effectValue: 20
   bagDuration: 5
