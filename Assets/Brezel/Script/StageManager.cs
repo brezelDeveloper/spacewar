@@ -43,6 +43,24 @@ public class StageManager : MonoBehaviour
     [SerializeField] private string endSceneName = "MainMenu";
     [SerializeField] private float endDelay = 3f;
 
+    [Header("엔딩 (직접 만든 UI 연결)")]
+    [Tooltip("엔딩 전체 화면 (평소엔 꺼 둠)")]
+    [SerializeField] private GameObject endingPanel;
+    [Tooltip("스토리가 한 글자씩 나오는 글자")]
+    [SerializeField] private TMP_Text endingStoryText;
+    [TextArea(3, 10)]
+    [SerializeField] private string endingStory = "외계 비행체들의 거센 유도 미사일 공격과 성운의 어둠을 뚫고\n마침내 정상 항로를 되찾는 데 성공했습니다.\n\n무사히 3024년의 지구로 귀환한 주인공의 활약으로\n지구는 다시 새로운 희망을 맞이하게 됩니다.";
+    [Tooltip("한 글자가 나오는 간격(초)")]
+    [SerializeField] private float storyCharInterval = 0.05f;
+    [Tooltip("스토리가 다 나온 뒤 기다리는 시간(초)")]
+    [SerializeField] private float storyHoldTime = 2.5f;
+    [Tooltip("아래에서 위로 올라가는 크레딧 글자 (Pivot Y = 1, 앵커 아래 가운데)")]
+    [SerializeField] private RectTransform creditsText;
+    [Tooltip("크레딧이 올라가는 속도 (초당 픽셀)")]
+    [SerializeField] private float creditsSpeed = 80f;
+    [Tooltip("누르면 스토리를 바로 다 보여 주고, 누르고 있으면 크레딧이 4배 빨라짐")]
+    [SerializeField] private KeyCode endingSkipKey = KeyCode.Space;
+
     public static int CurrentStage { get; private set; } = 1;
     public static float StageTime { get; private set; }
     public static int KillsForBoss { get; private set; }
@@ -115,6 +133,8 @@ public class StageManager : MonoBehaviour
             }
         }
 
+        yield return PlayEnding();
+
         if (!string.IsNullOrEmpty(endSceneName))
         {
             yield return Fade(0f, 1f);
@@ -125,6 +145,60 @@ public class StageManager : MonoBehaviour
     private void Update()
     {
         if (timing) StageTime += Time.deltaTime;
+    }
+
+    private IEnumerator PlayEnding()
+    {
+        if (endingPanel == null) yield break;
+
+        Time.timeScale = 1f;
+        Player player = FindAnyObjectByType<Player>();
+        if (player != null) player.enabled = false;
+
+        if (creditsText != null) creditsText.gameObject.SetActive(false);
+        endingPanel.SetActive(true);
+
+        if (endingStoryText != null)
+        {
+            endingStoryText.gameObject.SetActive(true);
+            endingStoryText.text = endingStory;
+            endingStoryText.ForceMeshUpdate();
+            int total = endingStoryText.textInfo.characterCount;
+
+            for (int i = 0; i <= total; i++)
+            {
+                endingStoryText.maxVisibleCharacters = i;
+                if (Input.GetKeyDown(endingSkipKey)) break;
+                yield return new WaitForSecondsRealtime(storyCharInterval);
+            }
+
+            endingStoryText.maxVisibleCharacters = total;
+            yield return null;
+
+            for (float t = 0f; t < storyHoldTime; t += Time.unscaledDeltaTime)
+            {
+                if (Input.GetKeyDown(endingSkipKey)) break;
+                yield return null;
+            }
+
+            endingStoryText.gameObject.SetActive(false);
+        }
+
+        if (creditsText != null)
+        {
+            creditsText.gameObject.SetActive(true);
+            RectTransform area = creditsText.parent as RectTransform;
+            float areaHeight = area != null ? area.rect.height : 1080f;
+            Vector2 start = creditsText.anchoredPosition;
+            float endY = start.y + areaHeight + creditsText.rect.height;
+
+            while (creditsText.anchoredPosition.y < endY)
+            {
+                float speed = Input.GetKey(endingSkipKey) ? creditsSpeed * 4f : creditsSpeed;
+                creditsText.anchoredPosition += Vector2.up * speed * Time.unscaledDeltaTime;
+                yield return null;
+            }
+        }
     }
 
     private IEnumerator PlayStage(Stage stage, int number)

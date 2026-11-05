@@ -1,4 +1,4 @@
-using TMPro;
+ï»¿using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -7,13 +7,13 @@ public class HUD : MonoBehaviour
     [System.Serializable]
     public class CooldownSlot
     {
-        [Tooltip("ÀÌ Ä­ ÀüÃ¼ ¹­À½. ¾ÆÀÌÅÛ Ä­Àº Äü½½·ÔÀÌ ºñ¸é ÀÚµ¿À¸·Î ²¨Áü")]
+        [Tooltip("ì´ ì¹¸ ì „ì²´ ë¬¶ìŒ. ì•„ì´í…œ ì¹¸ì€ í€µìŠ¬ë¡¯ì´ ë¹„ë©´ ìë™ìœ¼ë¡œ êº¼ì§")]
         public GameObject root;
-        [Tooltip("ÆøÅº¡¤¾ÆÀÌÅÛ ±×¸²")]
+        [Tooltip("í­íƒ„Â·ì•„ì´í…œ ê·¸ë¦¼")]
         public Image icon;
-        [Tooltip("±×¸² À§¸¦ µ¤´Â ¾îµÎ¿î ÀÌ¹ÌÁö. ÄğÅ¸ÀÓÀÌ ÁÙ¾îµå´Â ¸¸Å­ ½Ã°èÃ³·³ »ç¶óÁü")]
+        [Tooltip("ê·¸ë¦¼ ìœ„ë¥¼ ë®ëŠ” ì–´ë‘ìš´ ì´ë¯¸ì§€. ì¿¨íƒ€ì„ì´ ì¤„ì–´ë“œëŠ” ë§Œí¼ ì‹œê³„ì²˜ëŸ¼ ì‚¬ë¼ì§")]
         public Image cover;
-        [Tooltip("³²Àº ÃÊ ¼ıÀÚ")]
+        [Tooltip("ë‚¨ì€ ì´ˆ ìˆ«ì")]
         public TMP_Text timeText;
     }
 
@@ -24,22 +24,20 @@ public class HUD : MonoBehaviour
         public Sprite icon;
     }
 
-    [Header("ÇÃ·¹ÀÌ¾î")]
-    [Tooltip("HP ¹Ù (Ã¤¿öÁö´Â ÂÊ ÀÌ¹ÌÁö). Pivot X¸¦ 0À¸·Î µÎ¸é ¿ŞÂÊºÎÅÍ ÁÙ¾îµê")]
+    [Header("í”Œë ˆì´ì–´")]
+    [Tooltip("HP ë°” (ì±„ì›Œì§€ëŠ” ìª½ ì´ë¯¸ì§€). Pivot Xë¥¼ 0ìœ¼ë¡œ ë‘ë©´ ì™¼ìª½ë¶€í„° ì¤„ì–´ë“¦")]
     [SerializeField] private Image hpBar;
     [SerializeField] private TMP_Text hpText;
-    [Tooltip("(¼±ÅÃ) ÆøÅº »óÅÂ ±ÛÀÚ. ÄğÅ¸ÀÓ Ä­À» ¾²¸é ºñ¿öµµ µÊ")]
-    [SerializeField] private TMP_Text bombText;
 
-    [Header("ÆøÅº UI (ÄğÅ¸ÀÓ °ÔÀÌÁö)")]
-    [Tooltip("(¼±ÅÃ) ÄğÅ¸ÀÓÀÌ Âû¼ö·Ï ´Ã¾î³ª´Â °ÔÀÌÁö")]
+    [Header("í­íƒ„ UI (ì¿¨íƒ€ì„ ê²Œì´ì§€)")]
+    [Tooltip("(ì„ íƒ) ì¿¨íƒ€ì„ì´ ì°°ìˆ˜ë¡ ëŠ˜ì–´ë‚˜ëŠ” ê²Œì´ì§€")]
     [SerializeField] private Image bombGaugeFill;
 
-    [Header("ÄğÅ¸ÀÓ Ä­ (Á÷Á¢ ¸¸µç UI ¿¬°á)")]
+    [Header("ì¿¨íƒ€ì„ ì¹¸ (ì§ì ‘ ë§Œë“  UI ì—°ê²°)")]
     [SerializeField] private CooldownSlot bombSlot = new CooldownSlot();
-    [Tooltip("À§¿¡¼­ºÎÅÍ Äü½½·Ô 1¹ø, 2¹ø")]
+    [Tooltip("ìœ„ì—ì„œë¶€í„° í€µìŠ¬ë¡¯ 1ë²ˆ, 2ë²ˆ")]
     [SerializeField] private CooldownSlot[] skillSlots = { new CooldownSlot(), new CooldownSlot() };
-    [Tooltip("ÆÄÃ÷ Á¾·ùº° ¾ÆÀÌÄÜ ±×¸²")]
+    [Tooltip("íŒŒì¸  ì¢…ë¥˜ë³„ ì•„ì´ì½˜ ê·¸ë¦¼")]
     [SerializeField]
     private PartIcon[] partIcons =
     {
@@ -49,29 +47,41 @@ public class HUD : MonoBehaviour
         new PartIcon { type = PartType.BlackHole },
         new PartIcon { type = PartType.SlowField }
     };
+    [Header("ì¿¨íƒ€ì„ ì¹¸ ìë™ ìƒì„± (ì„ì‹œ â€” ë‚˜ì¤‘ì— ì§ì ‘ ë§Œë“¤ë©´ ë„ê³  ìœ„ ì¹¸ì— ì—°ê²°)")]
+    [Tooltip("ì¼œë©´ ê²Œì„ ì‹œì‘ ë•Œ HPë°” ë°‘ì— ì¹¸ 3ê°œë¥¼ ìë™ìœ¼ë¡œ ë§Œë“¦")]
+    [SerializeField] private bool autoBuildSlots = true;
+    [SerializeField] private Sprite bombIcon;
+    [Tooltip("í™”ë©´ ì™¼ìª½ ìœ„ ëª¨ì„œë¦¬ì—ì„œ ì¹¸ ì¤„ê¹Œì§€ ê±°ë¦¬ (1920x1080 ê¸°ì¤€ í”½ì…€)")]
+    [SerializeField] private Vector2 autoBarPosition = new Vector2(15f, -55f);
+    [SerializeField] private float autoSlotSize = 64f;
+    [SerializeField] private float autoSlotSpacing = 10f;
+    [SerializeField] private float autoIconPadding = 6f;
+    [SerializeField] private float autoKeyFontSize = 16f;
+    [SerializeField] private float autoTimeFontSize = 30f;
+    [SerializeField] private Color autoSlotBackColor = new Color(0.1f, 0.12f, 0.2f, 0.85f);
+    [SerializeField] private Color autoCoverColor = new Color(0f, 0f, 0f, 0.7f);
+
     [SerializeField] private Color iconReadyColor = Color.white;
     [SerializeField] private Color iconCoolingColor = new Color(0.55f, 0.55f, 0.55f);
 
-    [Header("±â·Ï")]
+    [Header("ê¸°ë¡")]
     [SerializeField] private TMP_Text stageText;
     [SerializeField] private TMP_Text timeText;
-    [Tooltip("º¸½º µîÀå±îÁö ³²Àº Ã³Ä¡ ¼ö (Ã³Ä¡ 3/8)")]
+    [Tooltip("ë³´ìŠ¤ ë“±ì¥ê¹Œì§€ ë‚¨ì€ ì²˜ì¹˜ ìˆ˜ (ì²˜ì¹˜ 3/8)")]
     [SerializeField] private TMP_Text killText;
     [SerializeField] private TMP_Text scoreText;
     [SerializeField] private TMP_Text moneyText;
 
-    [Header("º¸½º")]
-    [Tooltip("º¸½º°¡ ÀÖÀ» ¶§¸¸ ÄÑÁö´Â ¹­À½ (º¸½º HP ¹ÙÀÇ ºÎ¸ğ)")]
+    [Header("ë³´ìŠ¤")]
+    [Tooltip("ë³´ìŠ¤ê°€ ìˆì„ ë•Œë§Œ ì¼œì§€ëŠ” ë¬¶ìŒ (ë³´ìŠ¤ HP ë°”ì˜ ë¶€ëª¨)")]
     [SerializeField] private GameObject bossGroup;
     [SerializeField] private Image bossBar;
 
-    [Header("»ö")]
+    [Header("ìƒ‰")]
     [SerializeField] private Color hpColor = new Color(0.3f, 0.9f, 0.4f);
     [SerializeField] private Color hpLowColor = new Color(1f, 0.3f, 0.3f);
-    [Tooltip("HP°¡ ÀÌ ºñÀ² ÀÌÇÏ¸é °æ°í »ö")]
+    [Tooltip("HPê°€ ì´ ë¹„ìœ¨ ì´í•˜ë©´ ê²½ê³  ìƒ‰")]
     [SerializeField, Range(0f, 1f)] private float lowHpRatio = 0.4f;
-    [SerializeField] private Color bombReadyColor = Color.white;
-    [SerializeField] private Color bombEmptyColor = new Color(1f, 1f, 1f, 0.3f);
 
     private Player player;
     private Item item;
@@ -81,6 +91,8 @@ public class HUD : MonoBehaviour
     void Start()
     {
         if (bossGroup != null) bossGroup.SetActive(false);
+
+        if (autoBuildSlots) BuildSlots();
 
         CheckSlot(bombSlot, "Bomb Slot");
         PrepareCover(bombSlot);
@@ -100,13 +112,107 @@ public class HUD : MonoBehaviour
         UpdateBoss();
     }
 
+    void BuildSlots()
+    {
+        Canvas canvas = GetComponentInParent<Canvas>();
+        if (canvas == null) return;
+
+        GameObject bar = new GameObject("AutoSkillBar", typeof(RectTransform));
+        RectTransform barRt = bar.GetComponent<RectTransform>();
+        barRt.SetParent(canvas.rootCanvas.transform, false);
+        barRt.anchorMin = new Vector2(0f, 1f);
+        barRt.anchorMax = new Vector2(0f, 1f);
+        barRt.pivot = new Vector2(0f, 1f);
+        barRt.anchoredPosition = autoBarPosition;
+        barRt.sizeDelta = new Vector2(autoSlotSize * 3f + autoSlotSpacing * 2f, autoSlotSize);
+
+        HorizontalLayoutGroup layout = bar.AddComponent<HorizontalLayoutGroup>();
+        layout.spacing = autoSlotSpacing;
+        layout.childAlignment = TextAnchor.UpperLeft;
+        layout.childControlWidth = false;
+        layout.childControlHeight = false;
+        layout.childForceExpandWidth = false;
+        layout.childForceExpandHeight = false;
+
+        TMP_FontAsset font = hpText != null ? hpText.font : null;
+
+        bombSlot = CreateSlot(barRt, "BombSlot", "Q", bombIcon, font);
+        skillSlots = new[]
+        {
+            CreateSlot(barRt, "Slot1", "1", null, font),
+            CreateSlot(barRt, "Slot2", "2", null, font)
+        };
+    }
+
+    CooldownSlot CreateSlot(RectTransform parent, string slotName, string key, Sprite sprite, TMP_FontAsset font)
+    {
+        GameObject go = new GameObject(slotName, typeof(RectTransform), typeof(Image));
+        RectTransform rt = go.GetComponent<RectTransform>();
+        rt.SetParent(parent, false);
+        rt.sizeDelta = new Vector2(autoSlotSize, autoSlotSize);
+        Image back = go.GetComponent<Image>();
+        back.color = autoSlotBackColor;
+        back.raycastTarget = false;
+
+        Image icon = CreateImage("Icon", rt);
+        icon.sprite = sprite;
+        icon.preserveAspect = true;
+
+        Image cover = CreateImage("Cover", rt);
+        cover.color = autoCoverColor;
+
+        TMP_Text keyText = CreateText("KeyText", rt, font, autoKeyFontSize, TextAlignmentOptions.TopLeft, 3f);
+        keyText.text = key;
+
+        TMP_Text time = CreateText("TimeText", rt, font, autoTimeFontSize, TextAlignmentOptions.Center, 0f);
+        time.fontStyle = FontStyles.Bold;
+        time.text = "";
+
+        return new CooldownSlot { root = go, icon = icon, cover = cover, timeText = time };
+    }
+
+    Image CreateImage(string objName, RectTransform parent)
+    {
+        GameObject go = new GameObject(objName, typeof(RectTransform), typeof(Image));
+        RectTransform rt = go.GetComponent<RectTransform>();
+        rt.SetParent(parent, false);
+        Stretch(rt, autoIconPadding);
+        Image image = go.GetComponent<Image>();
+        image.raycastTarget = false;
+        return image;
+    }
+
+    TMP_Text CreateText(string objName, RectTransform parent, TMP_FontAsset font, float size, TextAlignmentOptions align, float padding)
+    {
+        GameObject go = new GameObject(objName, typeof(RectTransform));
+        RectTransform rt = go.GetComponent<RectTransform>();
+        rt.SetParent(parent, false);
+        Stretch(rt, padding);
+        TextMeshProUGUI text = go.AddComponent<TextMeshProUGUI>();
+        if (font != null) text.font = font;
+        text.fontSize = size;
+        text.enableAutoSizing = false;
+        text.alignment = align;
+        text.color = Color.white;
+        text.raycastTarget = false;
+        return text;
+    }
+
+    void Stretch(RectTransform rt, float padding)
+    {
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.one;
+        rt.offsetMin = new Vector2(padding, padding);
+        rt.offsetMax = new Vector2(-padding, -padding);
+    }
+
     void CheckSlot(CooldownSlot slot, string label)
     {
-        if (slot.icon == null) Debug.LogWarning($"[HUD] {label} ¡æ Icon Ä­ÀÌ ºñ¾î ÀÖ¾î¿ä.");
-        if (slot.cover == null) Debug.LogWarning($"[HUD] {label} ¡æ Cover Ä­ÀÌ ºñ¾î ÀÖ¾î¿ä.");
-        if (slot.timeText == null) Debug.LogWarning($"[HUD] {label} ¡æ Time Text Ä­ÀÌ ºñ¾î ÀÖ¾î¿ä.");
+        if (slot.icon == null) Debug.LogWarning($"[HUD] {label} â†’ Icon ì¹¸ì´ ë¹„ì–´ ìˆì–´ìš”.");
+        if (slot.cover == null) Debug.LogWarning($"[HUD] {label} â†’ Cover ì¹¸ì´ ë¹„ì–´ ìˆì–´ìš”.");
+        if (slot.timeText == null) Debug.LogWarning($"[HUD] {label} â†’ Time Text ì¹¸ì´ ë¹„ì–´ ìˆì–´ìš”.");
         if (label == "Bomb Slot" && slot.icon != null && slot.icon.sprite == null)
-            Debug.LogWarning("[HUD] ÆøÅº Icon¿¡ ±×¸²(Source Image)ÀÌ ¾ø¾î¿ä.");
+            Debug.LogWarning("[HUD] í­íƒ„ Iconì— ê·¸ë¦¼(Source Image)ì´ ì—†ì–´ìš”.");
     }
 
     void UpdatePlayer()
@@ -121,20 +227,6 @@ public class HUD : MonoBehaviour
         SetBar(hpBar, player.HpRatio);
         if (hpBar != null) hpBar.color = player.HpRatio <= lowHpRatio ? hpLowColor : hpColor;
         SetText(hpText, $"HP {player.CurrentHp}/{player.MaxHp}");
-
-        if (bombText != null)
-        {
-            if (player.IsBombReady)
-            {
-                SetText(bombText, "ÆøÅº [Q] READY");
-                bombText.color = bombReadyColor;
-            }
-            else
-            {
-                SetText(bombText, $"ÆøÅº [Q] {Mathf.CeilToInt(player.BombRemaining)}ÃÊ");
-                bombText.color = bombEmptyColor;
-            }
-        }
 
         if (bombGaugeFill != null)
         {
@@ -223,9 +315,9 @@ public class HUD : MonoBehaviour
         SetText(timeText, $"{seconds / 60:00}:{seconds % 60:00}");
 
         int kills = Mathf.Min(Enemy.KillCount, StageManager.KillsForBoss);
-        SetText(killText, StageManager.BossPhase ? "º¸½ºÀü" : $"Ã³Ä¡ {kills}/{StageManager.KillsForBoss}");
-        SetText(scoreText, $"Á¡¼ö {score:N0}");
-        SetText(moneyText, Enemy.StageMoney > 0 ? $"ÆÄÆí {money:N0} (+{Enemy.StageMoney:N0})" : $"ÆÄÆí {money:N0}");
+        SetText(killText, StageManager.BossPhase ? "ë³´ìŠ¤ì „" : $"ì²˜ì¹˜ {kills}/{StageManager.KillsForBoss}");
+        SetText(scoreText, $"ì ìˆ˜ {score:N0}");
+        SetText(moneyText, Enemy.StageMoney > 0 ? $"íŒŒí¸ {money:N0} (+{Enemy.StageMoney:N0})" : $"íŒŒí¸ {money:N0}");
     }
 
     void UpdateBoss()

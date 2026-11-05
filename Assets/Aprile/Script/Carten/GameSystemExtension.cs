@@ -19,6 +19,10 @@ public class GameSystemExtension : MonoBehaviour
     public Sprite buttonSprite;
     public TMP_FontAsset koreanFont;
 
+    [Header("엔딩")]
+    [Tooltip("켜면 랭킹 입력 뒤 이 스크립트의 스토리 창 대신 StageManager의 엔딩 화면(직접 만든 UI)을 사용")]
+    public bool useManualEnding = true;
+
     [Header("2~3스테이지 장애물(운석) 스폰")]
     public GameObject obstaclePrefab;
     public int maxObstacles = 3;
@@ -738,6 +742,13 @@ public class GameSystemExtension : MonoBehaviour
             DataManager.Instance.AddRanking(finalName, DataManager.Instance.currentScore);
             ResetDataForNewGame();
             CloseAllModals();
+
+            if (useManualEnding)
+            {
+                IsEndingProcessDone = true;
+                return;
+            }
+
             modalBlocker.SetActive(true);
             endingStoryPanel.SetActive(true);
         }
@@ -960,6 +971,12 @@ public class GameSystemExtension : MonoBehaviour
                 endingScoreText.text = $"최종 점수 : {finalScore:N0} 점\n명예의 전당에 등록할 아이디(ID)를 입력해 주세요.";
             if (playerIdInput != null) playerIdInput.text = "";
             if (rankWarningText != null) rankWarningText.text = "";
+        }
+        else if (useManualEnding)
+        {
+            ResetDataForNewGame();
+            CloseAllModals();
+            IsEndingProcessDone = true;
         }
         else
         {

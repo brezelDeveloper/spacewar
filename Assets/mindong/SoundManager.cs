@@ -154,6 +154,7 @@ public class SoundManager : MonoBehaviour
     {
         if (Instance != null && Instance != this)
         {
+            Instance.FillMissingFrom(this);
             Destroy(this);
             return;
         }
@@ -183,6 +184,34 @@ public class SoundManager : MonoBehaviour
     private void Start()
     {
         PlayBgmForScene(SceneManager.GetActiveScene().name);
+    }
+
+    private void FillMissingFrom(SoundManager other)
+    {
+        if (menuBgm == null && other.menuBgm != null) menuBgm = other.menuBgm;
+        if (stageBgm == null && other.stageBgm != null) stageBgm = other.stageBgm;
+        if (bossBgm == null && other.bossBgm != null) bossBgm = other.bossBgm;
+
+        if (other.effects == null) return;
+
+        System.Collections.Generic.List<SfxEntry> list = new System.Collections.Generic.List<SfxEntry>(effects ?? new SfxEntry[0]);
+
+        foreach (SfxEntry theirs in other.effects)
+        {
+            if (theirs == null || theirs.clip == null) continue;
+
+            SfxEntry mine = list.Find(e => e != null && e.type == theirs.type);
+            if (mine == null) list.Add(theirs);
+            else if (mine.clip == null)
+            {
+                mine.clip = theirs.clip;
+                mine.volume = theirs.volume;
+                mine.maxLength = theirs.maxLength;
+                mine.fadeOut = theirs.fadeOut;
+            }
+        }
+
+        effects = list.ToArray();
     }
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
