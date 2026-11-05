@@ -55,6 +55,7 @@ public class StageManager : MonoBehaviour
     public static void SkipStage()
     {
         skipRequested = true;
+        SoundManager.Play(SoundManager.Sfx.CheatSkipStage); // [사운드 연동] 스테이지 스킵 치트 사운드
     }
 
     private Camera cam;
@@ -69,10 +70,9 @@ public class StageManager : MonoBehaviour
         }
     }
 
-    // [StageManager.cs 의 Start() 함수를 아래 코드로 교체]
     private IEnumerator Start()
     {
-        Time.timeScale = 1f; // 일시정지 상태에서 넘어왔을 경우를 대비해 시간 정상화
+        Time.timeScale = 1f;
         cam = Camera.main;
         if (messageText != null) messageText.text = "";
 
@@ -84,7 +84,6 @@ public class StageManager : MonoBehaviour
         while (index < stages.Length)
         {
             StageIndex = index;
-            // (기존에 있던 자동 SaveGame 호출을 제거하여 유저가 직접 저장할 때만 저장되게 함)
 
             yield return PlayStage(stages[index], index + 1);
             index++;
@@ -99,7 +98,6 @@ public class StageManager : MonoBehaviour
         StageIndex = 0;
         yield return ShowMessage("VICTORY", endDelay);
 
-        // 3스테이지 최종 클리어 시 엔딩 시퀀스(세이브 삭제 + 랭킹 입력 + 엔딩 메시지) 실행
         if (GameSystemExtension.Instance != null)
         {
             GameSystemExtension.Instance.StartVictorySequence();
@@ -131,6 +129,8 @@ public class StageManager : MonoBehaviour
         StageTime = 0f;
         timing = false;
         SetBackground(stage.background);
+
+        SoundManager.PlayStageBGM(); // [사운드 연동] 보스전 후 다음 스테이지 시작 시 스테이지 BGM 복구
 
         yield return ShowMessage($"STAGE {number}\n{stage.title}", messageTime);
 

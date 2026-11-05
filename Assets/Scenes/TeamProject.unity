@@ -3292,6 +3292,193 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1329621673
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1329621678}
+  - component: {fileID: 1329621677}
+  - component: {fileID: 1329621676}
+  - component: {fileID: 1329621675}
+  - component: {fileID: 1329621674}
+  m_Layer: 0
+  m_Name: Managers
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1329621674
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1329621673}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 26d33724a8cfc1345887ea6a29887a35, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  panelSprite: {fileID: 0}
+  buttonSprite: {fileID: 0}
+  koreanFont: {fileID: 0}
+  obstaclePrefab: {fileID: 1963712669095468057, guid: b25ca41cc29e56c4d904f744625512dd, type: 3}
+  maxObstacles: 3
+  obstacleSpawnInterval: 4
+  enableDarkVision: 1
+  visionSize: 7
+  customGuiSkin: {fileID: 11400000, guid: 9705c0e7595e14d42bcd9e476468d8d7, type: 2}
+  customKoreanFont: {fileID: 12800000, guid: f86bf0569b31f5d4b91fdcc61e88fe8e, type: 3}
+--- !u!114 &1329621675
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1329621673}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 02228351e0b3d9e48b522aa633036a49, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  menuBgm: {fileID: 0}
+  stageBgm: {fileID: 0}
+  bossBgm: {fileID: 0}
+  bgmVolume: 0.5
+  effects:
+  - type: 0
+    clip: {fileID: 8300000, guid: 287714c74120797488f2baa3f148324a, type: 3}
+    volume: 1
+  - type: 1
+    clip: {fileID: 0}
+    volume: 1
+  - type: 2
+    clip: {fileID: 0}
+    volume: 1
+  - type: 3
+    clip: {fileID: 0}
+    volume: 1
+  - type: 4
+    clip: {fileID: 0}
+    volume: 1
+  - type: 10
+    clip: {fileID: 0}
+    volume: 1
+  - type: 20
+    clip: {fileID: 0}
+    volume: 1
+  - type: 21
+    clip: {fileID: 0}
+    volume: 1
+  - type: 22
+    clip: {fileID: 8300000, guid: 36b16062a5709a046a0cdc3e07f9bd55, type: 3}
+    volume: 1
+  - type: 23
+    clip: {fileID: 8300000, guid: 38eb3affe722af34c85bc2e5604fb7e1, type: 3}
+    volume: 1
+  - type: 24
+    clip: {fileID: 8300000, guid: ee0c5756fe80cea4c8775eb09e0dc249, type: 3}
+    volume: 1
+  - type: 25
+    clip: {fileID: 8300000, guid: c41d041399a257f4599cd183fd5d47b8, type: 3}
+    volume: 1
+  - type: 26
+    clip: {fileID: 8300000, guid: 1b19d458a6bd84743913be3ff6bd56ca, type: 3}
+    volume: 1
+  - type: 27
+    clip: {fileID: 8300000, guid: 1ecd04c15717e314282bf193a68f6857, type: 3}
+    volume: 1
+  - type: 28
+    clip: {fileID: 8300000, guid: 995344392c130b043905054730c5826c, type: 3}
+    volume: 1
+  - type: 30
+    clip: {fileID: 0}
+    volume: 1
+  - type: 31
+    clip: {fileID: 8300000, guid: d31bacfe6a0935b449f374fed9bb6567, type: 3}
+    volume: 1
+  - type: 32
+    clip: {fileID: 8300000, guid: 137c0ad2b3d5c3146a48d6530a3e22b1, type: 3}
+    volume: 1
+  - type: 33
+    clip: {fileID: 8300000, guid: d5355f5c009aad94b9ceb3e327b6c3fa, type: 3}
+    volume: 1
+  - type: 34
+    clip: {fileID: 0}
+    volume: 1
+  - type: 35
+    clip: {fileID: 8300000, guid: 2b8643998df84a3418f1846a64fc6e66, type: 3}
+    volume: 1
+  - type: 40
+    clip: {fileID: 8300000, guid: c5570e6705a594345a5ce0de0e75058f, type: 3}
+    volume: 1
+  - type: 41
+    clip: {fileID: 8300000, guid: a5d0a314d3bcdf943a8c8cdab68d3a50, type: 3}
+    volume: 1
+  - type: 42
+    clip: {fileID: 8300000, guid: 1ecd04c15717e314282bf193a68f6857, type: 3}
+    volume: 1
+  - type: 43
+    clip: {fileID: 8300000, guid: 883acfd132926d54b864f023c6f3220d, type: 3}
+    volume: 1
+  - type: 44
+    clip: {fileID: 8300000, guid: 3d34157f374ee9f42a41bea65cd55d49, type: 3}
+    volume: 1
+  masterVolume: 1
+--- !u!114 &1329621676
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1329621673}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75c313a667a4e6141b08e62ce1993cfa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxItemCount: 5
+  maxWeightLimit: 10
+  bag: []
+  showBagUI: 1
+--- !u!114 &1329621677
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1329621673}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9ceb2df31bb6aa4418d2830fd1ecaf09, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  currentStage: 1
+  currentScore: 0
+  money: 0
+  ownedParts: 
+  quickSlots: 0000000000000000
+  rankList: []
+--- !u!4 &1329621678
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1329621673}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1406009248
 GameObject:
   m_ObjectHideFlags: 0
@@ -3779,142 +3966,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1703657820}
   m_CullTransparentMesh: 1
---- !u!1 &1709930077
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1709930080}
-  - component: {fileID: 1709930079}
-  - component: {fileID: 1709930078}
-  - component: {fileID: 1709930081}
-  - component: {fileID: 1709930083}
-  m_Layer: 0
-  m_Name: Managers
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1709930078
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1709930077}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 75c313a667a4e6141b08e62ce1993cfa, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  maxItemCount: 5
-  maxWeightLimit: 10
-  bag: []
-  showBagUI: 1
---- !u!114 &1709930079
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1709930077}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9ceb2df31bb6aa4418d2830fd1ecaf09, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  currentStage: 1
-  currentScore: 0
-  money: 0
-  ownedParts: 
-  quickSlots: 0000000000000000
-  rankList: []
---- !u!4 &1709930080
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1709930077}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1709930081
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1709930077}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 02228351e0b3d9e48b522aa633036a49, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  menuBgm: {fileID: 0}
-  stageBgm: {fileID: 0}
-  bossBgm: {fileID: 0}
-  bgmVolume: 0.5
-  effects:
-  - type: 0
-    clip: {fileID: 0}
-    volume: 1
-  - type: 1
-    clip: {fileID: 0}
-    volume: 1
-  - type: 2
-    clip: {fileID: 0}
-    volume: 1
-  - type: 3
-    clip: {fileID: 0}
-    volume: 1
-  - type: 4
-    clip: {fileID: 0}
-    volume: 1
-  - type: 5
-    clip: {fileID: 0}
-    volume: 1
-  - type: 6
-    clip: {fileID: 0}
-    volume: 1
-  - type: 7
-    clip: {fileID: 0}
-    volume: 1
-  - type: 8
-    clip: {fileID: 0}
-    volume: 1
-  - type: 9
-    clip: {fileID: 0}
-    volume: 1
-  masterVolume: 1
---- !u!114 &1709930083
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1709930077}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 26d33724a8cfc1345887ea6a29887a35, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  customGuiSkin: {fileID: 0}
-  customKoreanFont: {fileID: 0}
-  obstaclePrefab: {fileID: 1963712669095468057, guid: b25ca41cc29e56c4d904f744625512dd, type: 3}
-  maxObstacles: 3
-  obstacleSpawnInterval: 4
-  enableDarkVision: 1
-  visionSize: 7
 --- !u!1 &1756796179
 GameObject:
   m_ObjectHideFlags: 0
@@ -5015,6 +5066,6 @@ SceneRoots:
   - {fileID: 668792876}
   - {fileID: 370023323}
   - {fileID: 829428322}
-  - {fileID: 1709930080}
   - {fileID: 1406009250}
   - {fileID: 1261766771}
+  - {fileID: 1329621678}

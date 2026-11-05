@@ -194,6 +194,7 @@ public class Boss : MonoBehaviour
             if (InZone(rb.position))
             {
                 entered = true;
+                SoundManager.PlayBossBGM(); // [사운드 연동] 보스 등장 완료 시 보스 BGM 재생
                 PickWanderPoint();
             }
             return;
@@ -330,7 +331,7 @@ public class Boss : MonoBehaviour
 
     void Shoot(EnemyBullet prefab, float angle, bool homing, float life = 0f, ExplosionSettings blast = null)
     {
-        SoundManager.Play(SoundManager.Sfx.Shoot); // [추가] 미사일 발사 효과음!
+        SoundManager.Play(SoundManager.Sfx.PlayerShoot); // 탄 사격 효과음
         if (prefab == null) return;
 
         EnemyBullet shot = Instantiate(prefab, rb.position, Quaternion.Euler(0f, 0f, angle));
@@ -343,7 +344,6 @@ public class Boss : MonoBehaviour
         return Mathf.Atan2(d.y, d.x) * Mathf.Rad2Deg - 90f;
     }
 
-    // [Boss.cs 의 OnTriggerStay2D 함수를 아래 코드로 교체]
     void OnTriggerStay2D(Collider2D other)
     {
         if (dead || !entered) return;
@@ -351,12 +351,10 @@ public class Boss : MonoBehaviour
         Player player = other.GetComponentInParent<Player>();
         if (player == null || player.IsDead) return;
 
-        // 1. 플레이어가 보스 몸을 통과하지 못하도록 쿨타임과 상관없이 항상 바깥으로 튕겨냄!
         Vector2 away = (Vector2)player.transform.position - rb.position;
-        if (away.sqrMagnitude < 0.001f) away = Vector2.down; // 완전히 겹쳤을 때 예외 방지
+        if (away.sqrMagnitude < 0.001f) away = Vector2.down;
         player.Bounce(away, bounceDistance, bounceDuration);
 
-        // 2. 보스 체력을 깎는 데미지만 쿨타임(ramTimer)마다 1번씩 들어가도록 분리!
         if (ramTimer <= 0f)
         {
             ramTimer = ramCooldown;
@@ -369,7 +367,7 @@ public class Boss : MonoBehaviour
         if (dead) return;
 
         hp -= amount;
-        SoundManager.Play(SoundManager.Sfx.Hit);
+        SoundManager.Play(SoundManager.Sfx.BossHit); // [사운드 연동] 보스 피격 전용 사운드
         Debug.Log($"보스 HP {Mathf.Max(hp, 0)}/{maxHp}");
 
         if (hp <= 0)
@@ -409,6 +407,7 @@ public class Boss : MonoBehaviour
     void Die()
     {
         dead = true;
+        SoundManager.Play(SoundManager.Sfx.BossDeath); // [사운드 연동] 보스 사망 전용 사운드
 
         if (DataManager.Instance != null)
         {

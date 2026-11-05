@@ -1,4 +1,5 @@
-using System.Collections;
+ï»¿using System.Collections;
+using System.Collections.Generic;
 using System.Text;
 using TMPro;
 using UnityEngine;
@@ -13,71 +14,86 @@ public class GameSystemExtension : MonoBehaviour
     private const string SavedStageKey = "SpaceWar_SavedStage";
     private const string ShipColorIndexKey = "SpaceWar_ShipColor";
 
-    [Header("¡Ú UI ¿¡¼Â ½ºÅ² ¿¬°á (Demo ¾ÀÀÇ GUISkin ¿¬°á!) ¡Ú")]
-    [Tooltip("¿¡¼Â Æú´õ¿¡¼­ .guiskin ÆÄÀÏÀ» Ã£¾Æ ¿©±â¿¡ ³ÖÀ¸¸é ¸ğµç ÄÚµå UI°¡ ¿¡¼Â µğÀÚÀÎÀ¸·Î ¹Ù²ò´Ï´Ù!")]
-    public GUISkin customGuiSkin;
-    [Tooltip("±ÛÀÚ°¡ ¾È º¸ÀÏ ¶§¸¦ ´ëºñÇÑ ÇÑ±Û ÆùÆ® (.ttf / .otf)")]
-    public Font customKoreanFont;
+    [Header("â˜… UI ì—ì…‹ ìŠ¤í”„ë¼ì´íŠ¸ & í°íŠ¸ (ë¹„ì›Œë‘ë©´ ì”¬ì˜ ë²„íŠ¼/ìƒì ì—ì„œ ìë™ ì¶”ì¶œ!) â˜…")]
+    public Sprite panelSprite;
+    public Sprite buttonSprite;
+    public TMP_FontAsset koreanFont;
 
-    [Header("2~3½ºÅ×ÀÌÁö Àå¾Ö¹°(¿î¼®) ½ºÆù")]
+    [Header("2~3ìŠ¤í…Œì´ì§€ ì¥ì• ë¬¼(ìš´ì„) ìŠ¤í°")]
     public GameObject obstaclePrefab;
     public int maxObstacles = 3;
     public float obstacleSpawnInterval = 4f;
     private float obstacleTimer = 0f;
 
-    [Header("3½ºÅ×ÀÌÁö ½Ã¾ß Á¦ÇÑ ¼³Á¤")]
+    [Header("3ìŠ¤í…Œì´ì§€ ì‹œì•¼ ì œí•œ ì„¤ì •")]
     public bool enableDarkVision = true;
     public float visionSize = 7f;
 
+    // ê¸°ì¡´ ì”¬ ì§ë ¬í™” í˜¸í™˜ìš© ë³€ìˆ˜ (ê±´ë“œë¦¬ì§€ ì•Šìœ¼ì…”ë„ ë©ë‹ˆë‹¤)
+    [HideInInspector] public GUISkin customGuiSkin;
+    [HideInInspector] public Font customKoreanFont;
+
     public bool IsEndingProcessDone { get; private set; } = false;
 
+    // 3ìŠ¤í…Œì´ì§€ ì•”í‘ ì‹œì•¼ ì œí•œìš© ìº”ë²„ìŠ¤
     private Canvas darkCanvas;
     private RawImage darkImage;
     private Texture2D darkTexture;
     private Transform playerTransform;
 
-    private bool showRankWindow = false;
-    private bool showHelpWindow = false;
-    private bool showMenuSettings = false;
-    private bool showEndingRankInput = false;
-    private bool showEndingMessage = false;
-    private bool showDeathMenu = false;
+    // ì •ì‹ uGUI ì‹œìŠ¤í…œ ìº”ë²„ìŠ¤ ë° íŒ¨ë„ë“¤ (OnGUI ì™„ì „ ëŒ€ì²´!)
+    private Canvas uiCanvas;
+    private GameObject topMenuBar;
+    private Button continueBtn;
+    private TextMeshProUGUI shipColorBtnText;
+
+    private GameObject modalBlocker; // ë’¤ìª½ ë²„íŠ¼ ì´ì¤‘ í´ë¦­ì„ 100% ë§‰ì•„ì£¼ëŠ” ë ˆì´ìºìŠ¤íŠ¸ ì°¨ë‹¨ë§‰
+    private GameObject rankPanel;
+    private TextMeshProUGUI rankListText;
+    private GameObject helpPanel;
+    private GameObject settingsPanel;
+    private TextMeshProUGUI bgmLabel;
+    private TextMeshProUGUI sfxLabel;
+    private TextMeshProUGUI screenModeBtnText;
+
+    private GameObject pausePanel;
+    private GameObject deathPanel;
+    private TextMeshProUGUI deathStageText;
+
+    private GameObject endingInputPanel;
+    private TextMeshProUGUI endingScoreText;
+    private TMP_InputField playerIdInput;
+    private TextMeshProUGUI rankWarningText;
+    private GameObject endingStoryPanel;
+
     private bool isPaused = false;
-    private bool showSettingsInPause = false;
+    private bool isDeathOpen = false;
 
-    private string inputPlayerId = "";
-
-    // [Ãß°¡ ±â´É 1] ±âÃ¼(¿ìÁÖ¼±) µµ»ö ÄÃ·¯ ÇÁ¸®¼Â 5Á¾
+    // ê¸°ì²´ ë„ìƒ‰ ì»¬ëŸ¬ í”„ë¦¬ì…‹ 5ì¢…
     private readonly Color[] shipColors = new Color[]
     {
-        new Color(0f, 1f, 0.87f, 1f),    // 0: ±âº» ³×¿Â ¹ÎÆ®
-        new Color(1f, 1f, 1f, 1f),       // 1: ¿À¸®Áö³Î È­ÀÌÆ®
-        new Color(1f, 0.35f, 0.35f, 1f), // 2: Å©¸²½¼ ·¹µå
-        new Color(1f, 0.85f, 0.2f, 1f),  // 3: °ñµå ¿»·Î¿ì
-        new Color(0.7f, 0.4f, 1f, 1f)    // 4: ³×ºæ¶ó ÆÛÇÃ
+        new Color(1f, 1f, 1f, 1f),       // 0: ì˜¤ë¦¬ì§€ë„
+        new Color(0f, 1f, 0.87f, 1f),    // 1: ë„¤ì˜¨ ë¯¼íŠ¸
+        new Color(1f, 0.35f, 0.35f, 1f), // 2: í¬ë¦¼ìŠ¨ ë ˆë“œ
+        new Color(1f, 0.85f, 0.2f, 1f),  // 3: ê³¨ë“œ ì˜ë¡œìš°
+        new Color(0.7f, 0.4f, 1f, 1f)    // 4: ë„¤ë·¸ë¼ í¼í”Œ
     };
-    private readonly string[] shipColorNames = { "³×¿Â ¹ÎÆ®", "¿À¸®Áö³Î", "Å©¸²½¼ ·¹µå", "°ñµå ¿»·Î¿ì", "³×ºæ¶ó ÆÛÇÃ" };
+    private readonly string[] shipColorNames = { "ì˜¤ë¦¬ì§€ë„", "ë„¤ì˜¨ ë¯¼íŠ¸", "í¬ë¦¼ìŠ¨ ë ˆë“œ", "ê³¨ë“œ ì˜ë¡œìš°", "ë„¤ë·¸ë¼ í¼í”Œ" };
     private int currentColorIndex = 0;
 
     // =========================================================================
-    // [½ÂÈÄ ´Ô ±¸Çö À¯Áö] ·©Å· ¾ÆÀÌµğ ¿å¼³ °Ë¿­ ½Ã½ºÅÛ
-    // - ºñ±³ Àü¿¡ ¼Ò¹®ÀÚÈ­ + °ø¹é/¼ıÀÚ/Æ¯¼ö¹®ÀÚ Á¦°Å ¡æ ¿ìÈ¸ ÀÔ·Âµµ ¿Ïº® Â÷´Ü
+    // [ìŠ¹í›„ ë‹˜ êµ¬í˜„ ìœ ì§€] ë­í‚¹ ì•„ì´ë”” ìš•ì„¤ ê²€ì—´ ì‹œìŠ¤í…œ
     // =========================================================================
-    private string rankInputWarning = "";
-
     private static readonly string[] BadWords =
     {
-        // ÇÑ±Û
-        "¾¾¹ß", "½Ã¹ß", "¾¾¹Ù", "¾¾»¡", "½Ã»¡", "¾¾ÆÈ", "½ÃÆÈ", "½ÊÆÈ", "¤µ¤²", "¤¶¤²", "¤µ¤³",
-        "º´½Å", "ºé½Å", "ºù½Å", "¤²¤µ", "¤´",
-        "Á¿", "Á¸³ª", "Á¹¶ó", "¤¸¤¤",
-        "°³»õ", "»õ³¢", "¼¨³¢", "¤µ¤¢",
-        "¹ÌÄ£³ğ", "¹ÌÄ£³â", "¹ÌÄ£»õ", "¤±¤º",
-        "Áö¶ö", "¤¸¤©", "´ÚÃÄ", "²¨Á®",
-        "¿¥Ã¢", "´À±İ", "´Ï¾Ö¹Ì", "´Ï¹Ì", "¾Ö¹Ì", "¾Öºñ", "Ã¢³à",
-        // ¿µ¹® ÀÚÆÇÀ¸·Î Ä£ ÇÑ±Û ¿å (¿¹: tlqkf = ½Ã¹ß)
+        "ì”¨ë°œ", "ì‹œë°œ", "ì”¨ë°”", "ì”¨ë¹¨", "ì‹œë¹¨", "ì”¨íŒ”", "ì‹œíŒ”", "ì‹­íŒ”", "ã……ã…‚", "ã…†ã…‚", "ã……ã…ƒ",
+        "ë³‘ì‹ ", "ë¸…ì‹ ", "ë¹™ì‹ ", "ã…‚ã……", "ã…„",
+        "ì¢†", "ì¡´ë‚˜", "ì¡¸ë¼", "ã…ˆã„´",
+        "ê°œìƒˆ", "ìƒˆë¼", "ì„€ë¼", "ã……ã„²",
+        "ë¯¸ì¹œë†ˆ", "ë¯¸ì¹œë…„", "ë¯¸ì¹œìƒˆ", "ã…ã…Š",
+        "ì§€ë„", "ã…ˆã„¹", "ë‹¥ì³", "êº¼ì ¸",
+        "ì— ì°½", "ëŠê¸ˆ", "ë‹ˆì• ë¯¸", "ë‹ˆë¯¸", "ì• ë¯¸", "ì• ë¹„", "ì°½ë…€",
         "tlqkf", "qudtls", "whssk",
-        // ¿µ¾î
         "fuck", "fck", "fuk", "shit", "bitch", "dick", "pussy", "asshole", "bastard"
     };
 
@@ -96,7 +112,6 @@ public class GameSystemExtension : MonoBehaviour
     {
         string normalized = NormalizeForFilter(name);
         if (normalized.Length == 0) return false;
-
         foreach (string word in BadWords)
         {
             if (normalized.Contains(word)) return true;
@@ -135,18 +150,17 @@ public class GameSystemExtension : MonoBehaviour
 
     private void CheckSceneSetup(string sceneName)
     {
-        showRankWindow = false;
-        showHelpWindow = false;
-        showMenuSettings = false;
-        showEndingRankInput = false;
-        showEndingMessage = false;
-        showDeathMenu = false;
         isPaused = false;
-        showSettingsInPause = false;
-        rankInputWarning = "";
+        isDeathOpen = false;
         Time.timeScale = 1f;
 
-        // ¾À ³»ÀÇ ¸ğµç UI Button¿¡ Å¬¸¯ È¿°úÀ½ ÀÚµ¿ ¿¬°á
+        // 1. í˜„ì¬ ì”¬ì˜ ê¸°ì¡´ UI(StartButton, ShopPanel ë“±)ì—ì„œ ì—ì…‹ ìŠ¤í† ì–´ ì´ë¯¸ì§€ì™€ í•œê¸€ TMP í°íŠ¸ ìë™ ì¶”ì¶œ!
+        ExtractAssetsFromCurrentScene();
+
+        // 2. ì •ì‹ Canvas UI ìƒì„± ë˜ëŠ” ê°±ì‹ 
+        BuildOrRefreshSystemCanvas(sceneName);
+
+        // 3. ì”¬ ë‚´ ëª¨ë“  ë²„íŠ¼ì— í´ë¦­ íš¨ê³¼ìŒ ì—°ê²°
         AttachClickSoundToAllButtons();
 
         if (sceneName == "MainMenu")
@@ -170,28 +184,582 @@ public class GameSystemExtension : MonoBehaviour
         }
     }
 
+    // ì”¬ì— ì´ë¯¸ ì ìš©í•´ ë‘ì‹  ì—ì…‹ ìŠ¤í† ì–´ ìŠ¤í”„ë¼ì´íŠ¸ì™€ í•œê¸€ í°íŠ¸ë¥¼ ìë™ìœ¼ë¡œ ê°€ì ¸ì˜µë‹ˆë‹¤.
+    private void ExtractAssetsFromCurrentScene()
+    {
+        if (koreanFont == null)
+        {
+            foreach (TMP_Text t in FindObjectsByType<TMP_Text>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                if (t.font != null && !t.font.name.Contains("Liberation"))
+                {
+                    koreanFont = t.font;
+                    break;
+                }
+            }
+        }
+
+        if (buttonSprite == null)
+        {
+            GameObject startBtn = GameObject.Find("StartButton");
+            if (startBtn != null && startBtn.TryGetComponent(out Image img) && img.sprite != null)
+                buttonSprite = img.sprite;
+
+            if (buttonSprite == null)
+            {
+                GameObject closeBtn = GameObject.Find("CloseButton");
+                if (closeBtn != null && closeBtn.TryGetComponent(out Image cImg) && cImg.sprite != null)
+                    buttonSprite = cImg.sprite;
+            }
+        }
+
+        if (panelSprite == null)
+        {
+            GameObject shopPanel = GameObject.Find("ShopPanel");
+            if (shopPanel != null && shopPanel.TryGetComponent(out Image pImg) && pImg.sprite != null)
+                panelSprite = pImg.sprite;
+        }
+    }
+
+    // =========================================================================
+    // â˜… êµ¬ì‹ OnGUIë¥¼ ëŒ€ì²´í•˜ëŠ” ì •ì‹ Canvas(uGUI) ì‹œìŠ¤í…œ ìë™ ìƒì„±ê¸° â˜…
+    // =========================================================================
+    private void BuildOrRefreshSystemCanvas(string sceneName)
+    {
+        if (uiCanvas == null)
+        {
+            GameObject canvasObj = new GameObject("SystemUICanvas");
+            DontDestroyOnLoad(canvasObj);
+
+            uiCanvas = canvasObj.AddComponent<Canvas>();
+            uiCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            uiCanvas.sortingOrder = 100; // ìµœìƒë‹¨ì— í‘œì‹œë˜ì–´ ì…ë ¥ì„ ì •í™•íˆ ì²˜ë¦¬
+
+            CanvasScaler scaler = canvasObj.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920, 1080);
+
+            canvasObj.AddComponent<GraphicRaycaster>(); // ë§ˆìš°ìŠ¤ í´ë¦­ì„ ì •ì‹ìœ¼ë¡œ ì²˜ë¦¬ (ì´ì¤‘ í´ë¦­ ë°©ì§€!)
+
+            // 1. ë©”ì¸ ë©”ë‰´ ìƒë‹¨ ë°” ìƒì„±
+            BuildTopMenuBar(canvasObj.transform);
+
+            // 2. íŒì—…ì°½ ë’¤ìª½ í´ë¦­ì„ ì™„ë²½íˆ ì°¨ë‹¨í•˜ëŠ” ì•”ì „ ë°°ê²½(Blocker) ìƒì„±
+            modalBlocker = CreateUIImage("ModalBlocker", canvasObj.transform, null, new Color(0f, 0f, 0f, 0.78f));
+            StretchFull(modalBlocker.GetComponent<RectTransform>());
+            modalBlocker.GetComponent<Image>().raycastTarget = true; // ë’¤ìª½ START ë²„íŠ¼ ë“±ì´ ì ˆëŒ€ ì•ˆ ëˆŒë¦¬ê²Œ ë°©ì–´!
+
+            // 3. ê° íŒì—… íŒ¨ë„ ìƒì„± (ë­í‚¹, ë„ì›€ë§, ì„¤ì •, ì¼ì‹œì •ì§€, ì‚¬ë§, ì—”ë”©)
+            BuildRankPanel(modalBlocker.transform);
+            BuildHelpPanel(modalBlocker.transform);
+            BuildSettingsPanel(modalBlocker.transform);
+            BuildPausePanel(modalBlocker.transform);
+            BuildDeathPanel(modalBlocker.transform);
+            BuildEndingPanels(modalBlocker.transform);
+        }
+        else
+        {
+            // ìƒˆë¡œ ì¶”ì¶œëœ ìŠ¤í”„ë¼ì´íŠ¸ë‚˜ í°íŠ¸ê°€ ìˆë‹¤ë©´ ì—…ë°ì´íŠ¸
+            RefreshVisualAssets();
+        }
+
+        CloseAllModals();
+
+        // ë©”ì¸ ë©”ë‰´ì¼ ë•Œë§Œ ìƒë‹¨ ë©”ë‰´ ë°” í‘œì‹œ
+        if (topMenuBar != null)
+        {
+            topMenuBar.SetActive(sceneName == "MainMenu");
+            if (continueBtn != null) continueBtn.gameObject.SetActive(HasValidSave());
+            if (shipColorBtnText != null) shipColorBtnText.text = $"ê¸°ì²´ ë„ìƒ‰: {shipColorNames[currentColorIndex]}";
+        }
+    }
+
+    private void BuildTopMenuBar(Transform parent)
+    {
+        topMenuBar = new GameObject("TopMenuBar", typeof(RectTransform));
+        topMenuBar.transform.SetParent(parent, false);
+        RectTransform rt = topMenuBar.GetComponent<RectTransform>();
+        rt.anchorMin = new Vector2(0f, 1f);
+        rt.anchorMax = new Vector2(1f, 1f);
+        rt.pivot = new Vector2(0.5f, 1f);
+        rt.anchoredPosition = new Vector2(0f, -20f);
+        rt.sizeDelta = new Vector2(0f, 70f);
+
+        HorizontalLayoutGroup layout = topMenuBar.AddComponent<HorizontalLayoutGroup>();
+        layout.padding = new RectOffset(30, 30, 5, 5);
+        layout.spacing = 18f;
+        layout.childAlignment = TextAnchor.MiddleLeft;
+        layout.childControlWidth = false;
+        layout.childControlHeight = false;
+
+        // 1) ì´ì–´í•˜ê¸° ë²„íŠ¼ (ì„¸ì´ë¸Œê°€ ìˆì„ ë•Œë§Œ ìë™ í™œì„±í™”)
+        continueBtn = CreateAssetButton("ContinueBtn", topMenuBar.transform, "ì´ì–´í•˜ê¸°", new Vector2(190, 58), () =>
+        {
+            if (DataManager.Instance != null)
+            {
+                DataManager.Instance.LoadGame();
+                DataManager.Instance.currentStage = PlayerPrefs.GetInt(SavedStageKey, 1);
+            }
+            SceneManager.LoadScene("TeamProject");
+        });
+
+        // 2) ë­í‚¹ ë²„íŠ¼
+        CreateAssetButton("RankBtn", topMenuBar.transform, "ë­í‚¹ (Top 5)", new Vector2(210, 58), OpenRankModal);
+
+        // 3) í™˜ê²½ ì„¤ì • ë²„íŠ¼
+        CreateAssetButton("SettingsBtn", topMenuBar.transform, "í™˜ê²½ ì„¤ì •", new Vector2(190, 58), OpenSettingsModal);
+
+        // 4) ì¡°ì‘ ë„ì›€ë§ ë²„íŠ¼
+        CreateAssetButton("HelpBtn", topMenuBar.transform, "ì¡°ì‘ ë„ì›€ë§", new Vector2(210, 58), OpenHelpModal);
+
+        // 5) ê¸°ì²´ ë„ìƒ‰ ë³€ê²½ ë²„íŠ¼
+        Button colorBtn = CreateAssetButton("ColorBtn", topMenuBar.transform, $"ê¸°ì²´ ë„ìƒ‰: {shipColorNames[currentColorIndex]}", new Vector2(290, 58), () =>
+        {
+            SoundManager.Play(SoundManager.Sfx.Equip);
+            currentColorIndex = (currentColorIndex + 1) % shipColors.Length;
+            PlayerPrefs.SetInt(ShipColorIndexKey, currentColorIndex);
+            PlayerPrefs.Save();
+            if (shipColorBtnText != null) shipColorBtnText.text = $"ê¸°ì²´ ë„ìƒ‰: {shipColorNames[currentColorIndex]}";
+            ApplyShipColorInMenu();
+        });
+        shipColorBtnText = colorBtn.GetComponentInChildren<TextMeshProUGUI>();
+
+        // 6) ê²Œì„ ì¢…ë£Œ ë²„íŠ¼
+        CreateAssetButton("QuitBtn", topMenuBar.transform, "ê²Œì„ ì¢…ë£Œ", new Vector2(180, 58), () => Application.Quit());
+    }
+
+    private void BuildRankPanel(Transform parent)
+    {
+        rankPanel = CreateAssetWindow("RankPanel", parent, "[ ëª…ì˜ˆì˜ ì „ë‹¹ (TOP 5) ]", new Vector2(720, 540));
+
+        rankListText = CreateTMPText("RankListText", rankPanel.transform, "", 28, TextAlignmentOptions.Center);
+        rankListText.rectTransform.anchoredPosition = new Vector2(0, 15);
+        rankListText.rectTransform.sizeDelta = new Vector2(640, 320);
+
+        Button closeBtn = CreateAssetButton("CloseBtn", rankPanel.transform, "ë‹«ê¸°", new Vector2(220, 65), CloseAllModals);
+        closeBtn.GetComponent<RectTransform>().anchoredPosition = new Vector2(0, -200);
+    }
+
+    private void BuildHelpPanel(Transform parent)
+    {
+        helpPanel = CreateAssetWindow("HelpPanel", parent, "[ ê²Œì„ ìŠ¤í† ë¦¬ ë° ì¡°ì‘ ë„ì›€ë§ ]", new Vector2(860, 580));
+
+        string helpMsg = "<color=#00FFFF>[ìŠ¤í† ë¦¬ : ë¯¸ë˜ 3024ë…„]</color>\n" +
+                         "í•­ë¡œë¥¼ ì´íƒˆí•œ ì£¼ì¸ê³µ ìš°ì£¼ì„ ì´ ì™¸ê³„ ë¹„í–‰ì²´ì˜ ìœ ë„ ë¯¸ì‚¬ì¼ì„ í”¼í•´\n" +
+                         "ì ë¼ë¦¬ ë§ì¶”ë©° 3ê°œì˜ ìŠ¤í…Œì´ì§€ë¥¼ íƒˆì¶œí•˜ëŠ” ê²Œì„ì…ë‹ˆë‹¤!\n\n" +
+                         "<color=#FFD700>[ì¡°ì‘ ë°©ë²•]</color>\n" +
+                         "â€¢ ë°©í–¥í‚¤ (ì¢Œ, ìš°) : ìš°ì£¼ì„  íšŒì „   /   Left Shift : ê°ì† íšŒì „\n" +
+                         "â€¢ Q í‚¤ : ë¹„ìƒ í­íƒ„ (í™”ë©´ ë‚´ ëª¨ë“  íƒ„ë§‰ ì œê±°)\n" +
+                         "â€¢ ìˆ«ì 1, 2 í‚¤ : ìƒì ì—ì„œ ì¥ì°©í•œ íŒŒì¸  ìŠ¤í‚¬ ë°œë™\n" +
+                         "â€¢ ESC í‚¤ : ì¼ì‹œì •ì§€ ë° í™˜ê²½ ì„¤ì • / ì €ì¥\n" +
+                         "â€¢ F6 í‚¤ : ì„¸ì´ë¸Œ ë° ë­í‚¹ ë°ì´í„° ì´ˆê¸°í™” ì¹˜íŠ¸";
+
+        TextMeshProUGUI body = CreateTMPText("HelpBody", helpPanel.transform, helpMsg, 25, TextAlignmentOptions.Center);
+        body.rectTransform.anchoredPosition = new Vector2(0, 15);
+        body.rectTransform.sizeDelta = new Vector2(780, 360);
+
+        Button closeBtn = CreateAssetButton("CloseBtn", helpPanel.transform, "ë‹«ê¸°", new Vector2(220, 65), CloseAllModals);
+        closeBtn.GetComponent<RectTransform>().anchoredPosition = new Vector2(0, -220);
+    }
+
+    private void BuildSettingsPanel(Transform parent)
+    {
+        settingsPanel = CreateAssetWindow("SettingsPanel", parent, "[ í™˜ê²½ ì„¤ì • (SETTINGS) ]", new Vector2(700, 540));
+
+        // 1) BGM ë³¼ë¥¨ ì¡°ì ˆ í–‰
+        bgmLabel = CreateTMPText("BgmLabel", settingsPanel.transform, "ë°°ê²½ìŒì•…(BGM) ìŒëŸ‰ : 50%", 28, TextAlignmentOptions.Center);
+        bgmLabel.rectTransform.anchoredPosition = new Vector2(0, 120);
+        bgmLabel.rectTransform.sizeDelta = new Vector2(400, 50);
+
+        Button bgmDown = CreateAssetButton("BgmDown", settingsPanel.transform, "- 10%", new Vector2(140, 55), () => ChangeVolume(true, -0.1f));
+        bgmDown.GetComponent<RectTransform>().anchoredPosition = new Vector2(-110, 60);
+
+        Button bgmUp = CreateAssetButton("BgmUp", settingsPanel.transform, "+ 10%", new Vector2(140, 55), () => ChangeVolume(true, 0.1f));
+        bgmUp.GetComponent<RectTransform>().anchoredPosition = new Vector2(110, 60);
+
+        // 2) SFX ë³¼ë¥¨ ì¡°ì ˆ í–‰
+        sfxLabel = CreateTMPText("SfxLabel", settingsPanel.transform, "íš¨ê³¼ìŒ(SFX) ìŒëŸ‰ : 100%", 28, TextAlignmentOptions.Center);
+        sfxLabel.rectTransform.anchoredPosition = new Vector2(0, -15);
+        sfxLabel.rectTransform.sizeDelta = new Vector2(400, 50);
+
+        Button sfxDown = CreateAssetButton("SfxDown", settingsPanel.transform, "- 10%", new Vector2(140, 55), () => ChangeVolume(false, -0.1f));
+        sfxDown.GetComponent<RectTransform>().anchoredPosition = new Vector2(-110, -75);
+
+        Button sfxUp = CreateAssetButton("SfxUp", settingsPanel.transform, "+ 10%", new Vector2(140, 55), () => ChangeVolume(false, 0.1f));
+        sfxUp.GetComponent<RectTransform>().anchoredPosition = new Vector2(110, -75);
+
+        // 3) í™”ë©´ ëª¨ë“œ ì „í™˜ ë²„íŠ¼
+        Button screenBtn = CreateAssetButton("ScreenModeBtn", settingsPanel.transform, "í™”ë©´ ëª¨ë“œ ì „í™˜", new Vector2(440, 60), () =>
+        {
+            Screen.fullScreen = !Screen.fullScreen;
+            RefreshSettingsTexts();
+        });
+        screenBtn.GetComponent<RectTransform>().anchoredPosition = new Vector2(0, -150);
+        screenModeBtnText = screenBtn.GetComponentInChildren<TextMeshProUGUI>();
+
+        // 4) ë‹«ê¸° ë²„íŠ¼
+        Button closeBtn = CreateAssetButton("CloseBtn", settingsPanel.transform, "ë‹«ê¸°", new Vector2(220, 65), () =>
+        {
+            if (isPaused) OpenPauseModal();
+            else CloseAllModals();
+        });
+        closeBtn.GetComponent<RectTransform>().anchoredPosition = new Vector2(0, -225);
+    }
+
+    private void BuildPausePanel(Transform parent)
+    {
+        pausePanel = CreateAssetWindow("PausePanel", parent, "[ ì¼ì‹œì •ì§€ (PAUSED) ]", new Vector2(600, 480));
+
+        Button resumeBtn = CreateAssetButton("ResumeBtn", pausePanel.transform, "ê²Œì„ ì´ì–´í•˜ê¸°", new Vector2(420, 70), () =>
+        {
+            isPaused = false;
+            Time.timeScale = 1f;
+            CloseAllModals();
+        });
+        resumeBtn.GetComponent<RectTransform>().anchoredPosition = new Vector2(0, 75);
+
+        Button settingBtn = CreateAssetButton("SettingBtn", pausePanel.transform, "í™˜ê²½ ì„¤ì •", new Vector2(420, 70), OpenSettingsModal);
+        settingBtn.GetComponent<RectTransform>().anchoredPosition = new Vector2(0, -20);
+
+        Button saveExitBtn = CreateAssetButton("SaveExitBtn", pausePanel.transform, "ì €ì¥ í›„ ë©”ì¸ë©”ë‰´ë¡œ", new Vector2(420, 70), () =>
+        {
+            SaveCurrentProgress();
+            isPaused = false;
+            Time.timeScale = 1f;
+            CloseAllModals();
+            SceneManager.LoadScene("MainMenu");
+        });
+        saveExitBtn.GetComponent<RectTransform>().anchoredPosition = new Vector2(0, -115);
+    }
+
+    private void BuildDeathPanel(Transform parent)
+    {
+        deathPanel = CreateAssetWindow("DeathPanel", parent, "[ ìš°ì£¼ì„  íŒŒê´´ (GAME OVER) ]", new Vector2(640, 520));
+
+        deathStageText = CreateTMPText("DeathStageText", deathPanel.transform, "", 26, TextAlignmentOptions.Center);
+        deathStageText.rectTransform.anchoredPosition = new Vector2(0, 125);
+        deathStageText.rectTransform.sizeDelta = new Vector2(560, 70);
+
+        Button retryBtn = CreateAssetButton("RetryBtn", deathPanel.transform, "ë‹¤ì‹œ ì‹œì‘í•˜ê¸° (í˜„ì¬ ìŠ¤í…Œì´ì§€)", new Vector2(460, 68), () =>
+        {
+            if (DataManager.Instance != null) DataManager.Instance.currentStage = StageManager.CurrentStage;
+            isDeathOpen = false;
+            Time.timeScale = 1f;
+            CloseAllModals();
+            SceneManager.LoadScene("TeamProject");
+        });
+        retryBtn.GetComponent<RectTransform>().anchoredPosition = new Vector2(0, 35);
+
+        Button saveMenuBtn = CreateAssetButton("SaveMenuBtn", deathPanel.transform, "ì €ì¥ í›„ ëŒì•„ê°€ê¸°", new Vector2(460, 68), () =>
+        {
+            SaveCurrentProgress();
+            isDeathOpen = false;
+            Time.timeScale = 1f;
+            CloseAllModals();
+            SceneManager.LoadScene("MainMenu");
+        });
+        saveMenuBtn.GetComponent<RectTransform>().anchoredPosition = new Vector2(0, -55);
+
+        Button noSaveMenuBtn = CreateAssetButton("NoSaveMenuBtn", deathPanel.transform, "ì €ì¥í•˜ì§€ ì•Šê³  ëŒì•„ê°€ê¸°", new Vector2(460, 68), () =>
+        {
+            ClearSaveData();
+            ResetDataForNewGame();
+            isDeathOpen = false;
+            Time.timeScale = 1f;
+            CloseAllModals();
+            SceneManager.LoadScene("MainMenu");
+        });
+        noSaveMenuBtn.GetComponent<RectTransform>().anchoredPosition = new Vector2(0, -145);
+    }
+
+    private void BuildEndingPanels(Transform parent)
+    {
+        // 1) Top 5 ë­í‚¹ ì•„ì´ë”” ì…ë ¥ì°½ (ì •ì‹ TMP_InputField)
+        endingInputPanel = CreateAssetWindow("EndingInputPanel", parent, "[ ì¶•í•˜í•©ë‹ˆë‹¤! TOP 5 ê¸°ë¡ ë‹¬ì„±! ]", new Vector2(700, 480));
+
+        endingScoreText = CreateTMPText("EndingScoreText", endingInputPanel.transform, "", 26, TextAlignmentOptions.Center);
+        endingScoreText.rectTransform.anchoredPosition = new Vector2(0, 100);
+        endingScoreText.rectTransform.sizeDelta = new Vector2(600, 80);
+
+        // ì…ë ¥ í•„ë“œ ë°°ê²½
+        GameObject inputBg = CreateUIImage("InputFieldBg", endingInputPanel.transform, null, new Color(0.1f, 0.15f, 0.25f, 0.95f));
+        RectTransform inputRt = inputBg.GetComponent<RectTransform>();
+        inputRt.anchoredPosition = new Vector2(0, 5);
+        inputRt.sizeDelta = new Vector2(420, 65);
+
+        playerIdInput = inputBg.AddComponent<TMP_InputField>();
+        playerIdInput.characterLimit = 12;
+
+        TextMeshProUGUI inputText = CreateTMPText("Text", inputBg.transform, "", 30, TextAlignmentOptions.Center);
+        StretchFull(inputText.rectTransform);
+        playerIdInput.textViewport = inputRt;
+        playerIdInput.textComponent = inputText;
+
+        TextMeshProUGUI placeholder = CreateTMPText("Placeholder", inputBg.transform, "ì•„ì´ë”” ì…ë ¥...", 26, TextAlignmentOptions.Center);
+        placeholder.color = new Color(1f, 1f, 1f, 0.4f);
+        StretchFull(placeholder.rectTransform);
+        playerIdInput.placeholder = placeholder;
+
+        rankWarningText = CreateTMPText("WarningText", endingInputPanel.transform, "", 22, TextAlignmentOptions.Center);
+        rankWarningText.color = new Color(1f, 0.35f, 0.35f, 1f);
+        rankWarningText.rectTransform.anchoredPosition = new Vector2(0, -55);
+        rankWarningText.rectTransform.sizeDelta = new Vector2(640, 40);
+
+        playerIdInput.onValueChanged.AddListener(_ => { if (rankWarningText != null) rankWarningText.text = ""; });
+
+        Button submitBtn = CreateAssetButton("SubmitRankBtn", endingInputPanel.transform, "ë­í‚¹ ë“±ë¡ ì™„ë£Œ", new Vector2(280, 68), OnSubmitRankingId);
+        submitBtn.GetComponent<RectTransform>().anchoredPosition = new Vector2(0, -140);
+
+        // 2) ì§€êµ¬ ê·€í™˜ ì—”ë”© ìŠ¤í† ë¦¬ ì°½
+        endingStoryPanel = CreateAssetWindow("EndingStoryPanel", parent, "[ ì§€êµ¬ ê·€í™˜ ì„±ê³µ (ENDING) ]", new Vector2(820, 520));
+
+        string endingStory = "ì™¸ê³„ ë¹„í–‰ì²´ë“¤ì˜ ê±°ì„¼ ìœ ë„ ë¯¸ì‚¬ì¼ ê³µê²©ê³¼ ì„±ìš´ì˜ ì–´ë‘ ì„ ëš«ê³ \n" +
+                             "ë§ˆì¹¨ë‚´ ì •ìƒ í•­ë¡œë¥¼ ë˜ì°¾ëŠ” ë° ì„±ê³µí–ˆìŠµë‹ˆë‹¤!\n\n" +
+                             "ë¬´ì‚¬íˆ ë¯¸ë˜ 3024ë…„ì˜ ì§€êµ¬ë¡œ ê·€í™˜í•œ ì£¼ì¸ê³µì˜ í™œì•½ìœ¼ë¡œ\n" +
+                             "í™©íí•´ì§„ ì§€êµ¬ëŠ” ë‹¤ì‹œê¸ˆ ìƒˆë¡œìš´ í¬ë§ì„ ë§ì´í•˜ê²Œ ë©ë‹ˆë‹¤.\n\n" +
+                             "<color=#00FFFF>í”Œë ˆì´í•´ ì£¼ì…”ì„œ ê°ì‚¬í•©ë‹ˆë‹¤!</color>";
+
+        TextMeshProUGUI storyBody = CreateTMPText("StoryBody", endingStoryPanel.transform, endingStory, 26, TextAlignmentOptions.Center);
+        storyBody.rectTransform.anchoredPosition = new Vector2(0, 20);
+        storyBody.rectTransform.sizeDelta = new Vector2(740, 320);
+
+        Button endHomeBtn = CreateAssetButton("EndHomeBtn", endingStoryPanel.transform, "ë©”ì¸ ë©”ë‰´ë¡œ ì´ë™", new Vector2(280, 68), () =>
+        {
+            ResetDataForNewGame();
+            CloseAllModals();
+            IsEndingProcessDone = true;
+        });
+        endHomeBtn.GetComponent<RectTransform>().anchoredPosition = new Vector2(0, -185);
+    }
+
+    // ---------------- UI ìƒì„± ë„ìš°ë¯¸ í•¨ìˆ˜ë“¤ (ì—ì…‹ ìŠ¤í† ì–´ ìŠ¤í‚¨ & í°íŠ¸ ìë™ ì ìš©) ----------------
+    private GameObject CreateAssetWindow(string name, Transform parent, string title, Vector2 size)
+    {
+        Color bgCol = panelSprite != null ? new Color(0.08f, 0.12f, 0.2f, 0.96f) : new Color(0.06f, 0.09f, 0.16f, 0.96f);
+        GameObject win = CreateUIImage(name, parent, panelSprite, bgCol);
+        RectTransform rt = win.GetComponent<RectTransform>();
+        rt.sizeDelta = size;
+        rt.anchoredPosition = Vector2.zero;
+
+        TextMeshProUGUI titleTmp = CreateTMPText("Title", win.transform, title, 34, TextAlignmentOptions.Center);
+        titleTmp.color = new Color(0f, 1f, 1f, 1f);
+        titleTmp.rectTransform.anchorMin = new Vector2(0.5f, 1f);
+        titleTmp.rectTransform.anchorMax = new Vector2(0.5f, 1f);
+        titleTmp.rectTransform.pivot = new Vector2(0.5f, 1f);
+        titleTmp.rectTransform.anchoredPosition = new Vector2(0f, -25f);
+        titleTmp.rectTransform.sizeDelta = new Vector2(size.x - 40f, 60f);
+
+        return win;
+    }
+
+    private Button CreateAssetButton(string name, Transform parent, string label, Vector2 size, UnityEngine.Events.UnityAction onClick)
+    {
+        GameObject btnObj = CreateUIImage(name, parent, buttonSprite, Color.white);
+        RectTransform rt = btnObj.GetComponent<RectTransform>();
+        rt.sizeDelta = size;
+
+        Image img = btnObj.GetComponent<Image>();
+        if (buttonSprite != null) img.type = Image.Type.Sliced;
+
+        Button btn = btnObj.AddComponent<Button>();
+        ColorBlock cb = btn.colors;
+        cb.normalColor = new Color(0.76f, 0.85f, 0.88f, 1f); // StartButtonê³¼ ë™ì¼í•œ ë„¤ì˜¨ í†¤
+        cb.highlightedColor = Color.white;
+        cb.pressedColor = new Color(0.32f, 0.53f, 0.61f, 1f);
+        btn.colors = cb;
+
+        TextMeshProUGUI txt = CreateTMPText("Label", btnObj.transform, label, 23, TextAlignmentOptions.Center);
+        StretchFull(txt.rectTransform);
+        txt.raycastTarget = false;
+
+        btn.onClick.AddListener(() =>
+        {
+            SoundManager.Play(SoundManager.Sfx.Click);
+            onClick?.Invoke();
+        });
+
+        return btn;
+    }
+
+    private GameObject CreateUIImage(string name, Transform parent, Sprite sp, Color col)
+    {
+        GameObject go = new GameObject(name, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+        go.transform.SetParent(parent, false);
+        Image img = go.GetComponent<Image>();
+        img.sprite = sp;
+        img.color = col;
+        return go;
+    }
+
+    private TextMeshProUGUI CreateTMPText(string name, Transform parent, string content, float fontSize, TextAlignmentOptions align)
+    {
+        GameObject go = new GameObject(name, typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
+        go.transform.SetParent(parent, false);
+        TextMeshProUGUI tmp = go.GetComponent<TextMeshProUGUI>();
+        if (koreanFont != null) tmp.font = koreanFont;
+        tmp.text = content;
+        tmp.fontSize = fontSize;
+        tmp.fontStyle = FontStyles.Bold;
+        tmp.alignment = align;
+        tmp.color = Color.white;
+        return tmp;
+    }
+
+    private void StretchFull(RectTransform rt)
+    {
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.one;
+        rt.offsetMin = Vector2.zero;
+        rt.offsetMax = Vector2.zero;
+    }
+
+    private void RefreshVisualAssets()
+    {
+        if (uiCanvas == null) return;
+        foreach (TextMeshProUGUI tmp in uiCanvas.GetComponentsInChildren<TextMeshProUGUI>(true))
+        {
+            if (koreanFont != null) tmp.font = koreanFont;
+        }
+        foreach (Button btn in uiCanvas.GetComponentsInChildren<Button>(true))
+        {
+            if (buttonSprite != null && btn.TryGetComponent(out Image img))
+            {
+                img.sprite = buttonSprite;
+                img.type = Image.Type.Sliced;
+            }
+        }
+    }
+
+    // ---------------- íŒì—…ì°½ ì—´ê¸° / ë‹«ê¸° ì œì–´ í•¨ìˆ˜ ----------------
+    private void CloseAllModals()
+    {
+        if (modalBlocker == null) return;
+        rankPanel.SetActive(false);
+        helpPanel.SetActive(false);
+        settingsPanel.SetActive(false);
+        pausePanel.SetActive(false);
+        deathPanel.SetActive(false);
+        endingInputPanel.SetActive(false);
+        endingStoryPanel.SetActive(false);
+        modalBlocker.SetActive(false);
+    }
+
+    private void OpenRankModal()
+    {
+        CloseAllModals();
+        modalBlocker.SetActive(true);
+        rankPanel.SetActive(true);
+
+        if (DataManager.Instance == null || DataManager.Instance.rankList.Count == 0)
+        {
+            rankListText.text = "ì•„ì§ ë“±ë¡ëœ ë­í‚¹ ê¸°ë¡ì´ ì—†ìŠµë‹ˆë‹¤.";
+        }
+        else
+        {
+            StringBuilder sb = new StringBuilder();
+            var list = DataManager.Instance.rankList;
+            for (int i = 0; i < list.Count; i++)
+            {
+                sb.AppendLine($"{i + 1}ìœ„   |   ID: {MaskBadName(list[i].playerName)}   |   {list[i].score:N0} ì \n");
+            }
+            rankListText.text = sb.ToString();
+        }
+    }
+
+    private void OpenHelpModal()
+    {
+        CloseAllModals();
+        modalBlocker.SetActive(true);
+        helpPanel.SetActive(true);
+    }
+
+    private void OpenSettingsModal()
+    {
+        CloseAllModals();
+        modalBlocker.SetActive(true);
+        settingsPanel.SetActive(true);
+        RefreshSettingsTexts();
+    }
+
+    private void OpenPauseModal()
+    {
+        CloseAllModals();
+        modalBlocker.SetActive(true);
+        pausePanel.SetActive(true);
+    }
+
+    public void OpenDeathMenu()
+    {
+        isDeathOpen = true;
+        isPaused = false;
+        CloseAllModals();
+        modalBlocker.SetActive(true);
+        deathPanel.SetActive(true);
+        if (deathStageText != null)
+            deathStageText.text = $"í˜„ì¬ ìŠ¤í…Œì´ì§€ : Stage {StageManager.CurrentStage}\nì›í•˜ì‹œëŠ” ì§„í–‰ ë°©ì‹ì„ ì„ íƒí•´ ì£¼ì„¸ìš”.";
+    }
+
+    private void ChangeVolume(bool isBgm, float delta)
+    {
+        if (SoundManager.Instance == null) return;
+        if (isBgm) SoundManager.Instance.BgmVolume = Mathf.Clamp01(SoundManager.Instance.BgmVolume + delta);
+        else SoundManager.Instance.SfxVolume = Mathf.Clamp01(SoundManager.Instance.SfxVolume + delta);
+        RefreshSettingsTexts();
+    }
+
+    private void RefreshSettingsTexts()
+    {
+        if (SoundManager.Instance != null)
+        {
+            if (bgmLabel != null) bgmLabel.text = $"ë°°ê²½ìŒì•…(BGM) ìŒëŸ‰ : {Mathf.RoundToInt(SoundManager.Instance.BgmVolume * 100)}%";
+            if (sfxLabel != null) sfxLabel.text = $"íš¨ê³¼ìŒ(SFX) ìŒëŸ‰ : {Mathf.RoundToInt(SoundManager.Instance.SfxVolume * 100)}%";
+        }
+        if (screenModeBtnText != null)
+        {
+            screenModeBtnText.text = Screen.fullScreen ? "í˜„ì¬: ì „ì²´í™”ë©´ (í´ë¦­ ì‹œ ì°½ëª¨ë“œ)" : "í˜„ì¬: ì°½ëª¨ë“œ (í´ë¦­ ì‹œ ì „ì²´í™”ë©´)";
+        }
+    }
+
+    private void OnSubmitRankingId()
+    {
+        if (DataManager.Instance == null) return;
+        string raw = playerIdInput != null ? playerIdInput.text : "";
+        string finalName = string.IsNullOrWhiteSpace(raw) ? "PLAYER" : raw.Trim();
+
+        if (ContainsBadWord(finalName))
+        {
+            SoundManager.Play(SoundManager.Sfx.Deny);
+            if (rankWarningText != null) rankWarningText.text = "ë¶€ì ì ˆí•œ ë‹¨ì–´ê°€ í¬í•¨ëœ ì•„ì´ë””ëŠ” ë“±ë¡í•  ìˆ˜ ì—†ìŠµë‹ˆë‹¤.";
+            if (playerIdInput != null) playerIdInput.text = "";
+        }
+        else
+        {
+            DataManager.Instance.AddRanking(finalName, DataManager.Instance.currentScore);
+            ResetDataForNewGame();
+            CloseAllModals();
+            modalBlocker.SetActive(true);
+            endingStoryPanel.SetActive(true);
+        }
+    }
+
+    // ---------------- ì¸ê²Œì„ ë¡œì§ (ìš´ì„, 3ìŠ¤í…Œì´ì§€ ì‹œì•¼ ì œí•œ, ESC ì¼ì‹œì •ì§€) ----------------
     private void AttachClickSoundToAllButtons()
     {
         foreach (Button btn in FindObjectsByType<Button>(FindObjectsInactive.Include, FindObjectsSortMode.None))
         {
+            if (uiCanvas != null && btn.transform.IsChildOf(uiCanvas.transform)) continue;
             btn.onClick.RemoveListener(PlayButtonClickSfx);
             btn.onClick.AddListener(PlayButtonClickSfx);
         }
     }
 
-    private void PlayButtonClickSfx()
-    {
-        SoundManager.Play(SoundManager.Sfx.Click);
-    }
+    private void PlayButtonClickSfx() => SoundManager.Play(SoundManager.Sfx.Click);
 
     private void ApplyShipColorInMenu()
     {
-        // »õ·Î ¸¸µç PlayerShip ¶Ç´Â ±âÁ¸ MenuBackground(¹Ì»çÀÏ ÀÌ¹ÌÁö)¿¡ µµ»ö Àû¿ë
         GameObject shipImg = GameObject.Find("PlayerShip");
         if (shipImg != null && shipImg.TryGetComponent(out Image img))
-        {
             img.color = shipColors[currentColorIndex];
-        }
     }
 
     private void ApplyShipColorInGame()
@@ -207,22 +775,13 @@ public class GameSystemExtension : MonoBehaviour
     private void FixMessageTextKoreanFont()
     {
         GameObject msgObj = GameObject.Find("MessageText");
-        GameObject scoreObj = GameObject.Find("ScoreText");
-        if (msgObj != null && scoreObj != null)
+        if (msgObj != null && koreanFont != null && msgObj.TryGetComponent(out TMP_Text msgText))
         {
-            TMP_Text msgText = msgObj.GetComponent<TMP_Text>();
-            TMP_Text scoreText = scoreObj.GetComponent<TMP_Text>();
-            if (msgText != null && scoreText != null && scoreText.font != null)
-            {
-                msgText.font = scoreText.font;
-            }
+            msgText.font = koreanFont;
         }
     }
 
-    private void StartNewGameFromMenu()
-    {
-        ResetDataForNewGame();
-    }
+    private void StartNewGameFromMenu() => ResetDataForNewGame();
 
     private void ResetDataForNewGame()
     {
@@ -269,53 +828,44 @@ public class GameSystemExtension : MonoBehaviour
             PlayerPrefs.DeleteKey("RankList");
             PlayerPrefs.Save();
         }
-        Debug.Log("[Ä¡Æ® F6] ¼¼ÀÌºê µ¥ÀÌÅÍ ¹× ·©Å·ÀÌ ¿ÏÀüÈ÷ ÃÊ±âÈ­µÇ¾ú½À´Ï´Ù!");
+        if (continueBtn != null) continueBtn.gameObject.SetActive(false);
+        Debug.Log("[ì¹˜íŠ¸ F6] ì„¸ì´ë¸Œ ë°ì´í„° ë° ë­í‚¹ì´ ì™„ì „íˆ ì´ˆê¸°í™”ë˜ì—ˆìŠµë‹ˆë‹¤!");
     }
 
-    private bool HasValidSave()
-    {
-        return PlayerPrefs.GetInt(ValidSaveKey, 0) == 1;
-    }
-
-    public void OpenDeathMenu()
-    {
-        showDeathMenu = true;
-        isPaused = false;
-    }
+    private bool HasValidSave() => PlayerPrefs.GetInt(ValidSaveKey, 0) == 1;
 
     private void Update()
     {
-        // [±âÈ¹¼­ 14] F6 Ä¡Æ®Å°: ¼¼ÀÌºê ¹× ·©Å· µ¥ÀÌÅÍ Áï½Ã ÃÊ±âÈ­
         if (Input.GetKeyDown(KeyCode.F6))
         {
             ClearSaveData();
             ResetDataForNewGame();
-            SoundManager.Play(SoundManager.Sfx.Buy);
+            SoundManager.Play(SoundManager.Sfx.CheatDebug); // [ìˆ˜ì •] ë°ì´í„° ì´ˆê¸°í™” ì¹˜íŠ¸ ì‚¬ìš´ë“œë¡œ ì •ë°€í™”
         }
 
         if (SceneManager.GetActiveScene().name != "TeamProject") return;
 
         GameObject shopPanel = GameObject.Find("ShopPanel");
         bool isShopOpen = shopPanel != null && shopPanel.activeInHierarchy;
+        bool isEndingOpen = (endingInputPanel != null && endingInputPanel.activeSelf) || (endingStoryPanel != null && endingStoryPanel.activeSelf);
 
-        if (!isShopOpen && !showDeathMenu && !showEndingRankInput && !showEndingMessage)
+        if (!isShopOpen && !isDeathOpen && !isEndingOpen)
         {
             if (Input.GetKeyDown(KeyCode.Escape))
             {
                 SoundManager.Play(SoundManager.Sfx.Click);
                 isPaused = !isPaused;
-                showSettingsInPause = false;
                 Time.timeScale = isPaused ? 0f : 1f;
+                if (isPaused) OpenPauseModal();
+                else CloseAllModals();
             }
         }
 
         int stage = StageManager.CurrentStage;
         if (DataManager.Instance != null && DataManager.Instance.currentStage > stage)
-        {
             stage = DataManager.Instance.currentStage;
-        }
 
-        if (stage >= 2 && obstaclePrefab != null && !isPaused && !showDeathMenu)
+        if (stage >= 2 && obstaclePrefab != null && !isPaused && !isDeathOpen)
         {
             obstacleTimer += Time.deltaTime;
             if (obstacleTimer >= obstacleSpawnInterval)
@@ -334,11 +884,9 @@ public class GameSystemExtension : MonoBehaviour
 
         if (darkCanvas != null)
         {
-            bool activeDark = (stage >= 3) && enableDarkVision && !isShopOpen && !isPaused && !showDeathMenu && !showEndingRankInput && !showEndingMessage;
+            bool activeDark = (stage >= 3) && enableDarkVision && !isShopOpen && !isPaused && !isDeathOpen && !isEndingOpen;
             if (darkCanvas.gameObject.activeSelf != activeDark)
-            {
                 darkCanvas.gameObject.SetActive(activeDark);
-            }
 
             if (activeDark && Camera.main != null)
             {
@@ -347,7 +895,6 @@ public class GameSystemExtension : MonoBehaviour
                     GameObject p = GameObject.FindWithTag("Player");
                     if (p != null) playerTransform = p.transform;
                 }
-
                 if (playerTransform != null)
                 {
                     Vector3 viewPos = Camera.main.WorldToViewportPoint(playerTransform.position);
@@ -395,352 +942,28 @@ public class GameSystemExtension : MonoBehaviour
         }
         darkTexture.Apply();
         darkImage.texture = darkTexture;
-
         canvasObj.SetActive(false);
     }
 
     public void StartVictorySequence()
     {
         IsEndingProcessDone = false;
-        inputPlayerId = "";
-        rankInputWarning = "";
-
         int finalScore = DataManager.Instance != null ? DataManager.Instance.currentScore : 0;
         ClearSaveData();
+        CloseAllModals();
+        modalBlocker.SetActive(true);
 
         if (DataManager.Instance != null && DataManager.Instance.IsTop5Score(finalScore))
         {
-            showEndingRankInput = true;
+            endingInputPanel.SetActive(true);
+            if (endingScoreText != null)
+                endingScoreText.text = $"ìµœì¢… ì ìˆ˜ : {finalScore:N0} ì \nëª…ì˜ˆì˜ ì „ë‹¹ì— ë“±ë¡í•  ì•„ì´ë””(ID)ë¥¼ ì…ë ¥í•´ ì£¼ì„¸ìš”.";
+            if (playerIdInput != null) playerIdInput.text = "";
+            if (rankWarningText != null) rankWarningText.text = "";
         }
         else
         {
-            showEndingMessage = true;
-        }
-    }
-
-    private void OnGUI()
-    {
-        // ¿¡¼Â ½ºÅä¾î µ¥¸ğ ¾ÀÀÇ GUISkin Àû¿ë
-        if (customGuiSkin != null)
-        {
-            GUI.skin = customGuiSkin;
-        }
-
-        string currentScene = SceneManager.GetActiveScene().name;
-
-        GUIStyle solidBoxStyle = new GUIStyle(GUI.skin.box) { fontSize = 24, alignment = TextAnchor.UpperCenter, fontStyle = FontStyle.Bold };
-        solidBoxStyle.normal.textColor = Color.white;
-        if (customKoreanFont != null) solidBoxStyle.font = customKoreanFont;
-
-        GUIStyle btnStyle = new GUIStyle(GUI.skin.button) { fontSize = 18, fontStyle = FontStyle.Bold };
-        btnStyle.normal.textColor = Color.white;
-        if (customKoreanFont != null) btnStyle.font = customKoreanFont;
-
-        GUIStyle textStyle = new GUIStyle(GUI.skin.label) { fontSize = 20, alignment = TextAnchor.MiddleCenter };
-        textStyle.normal.textColor = Color.white;
-        if (customKoreanFont != null) textStyle.font = customKoreanFont;
-
-        // =========================================================================
-        // 1. ¸ŞÀÎ ¸Ş´º È­¸é UI
-        // =========================================================================
-        if (currentScene == "MainMenu")
-        {
-            float startX = 20f;
-
-            if (HasValidSave())
-            {
-                if (GUI.Button(new Rect(startX, 20, 140, 48), "ÀÌ¾îÇÏ±â", btnStyle))
-                {
-                    SoundManager.Play(SoundManager.Sfx.Click);
-                    if (DataManager.Instance != null)
-                    {
-                        DataManager.Instance.LoadGame();
-                        DataManager.Instance.currentStage = PlayerPrefs.GetInt(SavedStageKey, 1);
-                    }
-                    SceneManager.LoadScene("TeamProject");
-                }
-                startX += 150f;
-            }
-
-            if (GUI.Button(new Rect(startX, 20, 150, 48), "·©Å· (Top 5)", btnStyle))
-            {
-                SoundManager.Play(SoundManager.Sfx.Click);
-                showRankWindow = !showRankWindow;
-                showHelpWindow = false;
-                showMenuSettings = false;
-            }
-            startX += 160f;
-
-            if (GUI.Button(new Rect(startX, 20, 150, 48), "È¯°æ ¼³Á¤", btnStyle))
-            {
-                SoundManager.Play(SoundManager.Sfx.Click);
-                showMenuSettings = !showMenuSettings;
-                showRankWindow = false;
-                showHelpWindow = false;
-            }
-            startX += 160f;
-
-            if (GUI.Button(new Rect(startX, 20, 150, 48), "Á¶ÀÛ µµ¿ò¸»", btnStyle))
-            {
-                SoundManager.Play(SoundManager.Sfx.Click);
-                showHelpWindow = !showHelpWindow;
-                showRankWindow = false;
-                showMenuSettings = false;
-            }
-            startX += 160f;
-
-            if (GUI.Button(new Rect(startX, 20, 220, 48), $"±âÃ¼ µµ»ö: {shipColorNames[currentColorIndex]}", btnStyle))
-            {
-                SoundManager.Play(SoundManager.Sfx.Equip);
-                currentColorIndex = (currentColorIndex + 1) % shipColors.Length;
-                PlayerPrefs.SetInt(ShipColorIndexKey, currentColorIndex);
-                PlayerPrefs.Save();
-                ApplyShipColorInMenu();
-            }
-            startX += 230f;
-
-            if (GUI.Button(new Rect(startX, 20, 130, 48), "°ÔÀÓ Á¾·á", btnStyle))
-            {
-                SoundManager.Play(SoundManager.Sfx.Click);
-                Application.Quit();
-            }
-
-            GUI.Label(new Rect(20, Screen.height - 40, 320, 30), "Ä¡Æ® ¾È³»: [F6] ¼¼ÀÌºê/·©Å· ÃÊ±âÈ­",
-                new GUIStyle(textStyle) { fontSize = 14, alignment = TextAnchor.MiddleLeft, normal = { textColor = Color.yellow } });
-
-            if (showRankWindow && DataManager.Instance != null)
-            {
-                GUI.Box(new Rect(0, 0, Screen.width, Screen.height), "");
-                Rect rankRect = new Rect(Screen.width * 0.5f - 250, Screen.height * 0.5f - 200, 500, 400);
-                GUI.Box(rankRect, "[ ¸í¿¹ÀÇ Àü´ç (TOP 5) ]", solidBoxStyle);
-
-                var list = DataManager.Instance.rankList;
-                if (list.Count == 0)
-                {
-                    GUI.Label(new Rect(rankRect.x, rankRect.y + 150, 500, 50), "¾ÆÁ÷ µî·ÏµÈ ·©Å· ±â·ÏÀÌ ¾ø½À´Ï´Ù.", textStyle);
-                }
-                else
-                {
-                    for (int i = 0; i < list.Count; i++)
-                    {
-                        // [½ÂÈÄ ´Ô ±¸Çö À¯Áö] ÀÌ¹Ì ÀúÀåµÅ ÀÖ´ø ¿å¼³ ¾ÆÀÌµğµµ *** ·Î °¡·Á¼­ Ç¥½Ã
-                        string rankLine = $"{i + 1}À§   |   ID: {MaskBadName(list[i].playerName)}   |   {list[i].score} Á¡";
-                        GUI.Label(new Rect(rankRect.x + 30, rankRect.y + 70 + i * 50, 440, 40), rankLine, textStyle);
-                    }
-                }
-
-                if (GUI.Button(new Rect(rankRect.x + 175, rankRect.y + 330, 150, 50), "´İ±â", btnStyle))
-                {
-                    SoundManager.Play(SoundManager.Sfx.Click);
-                    showRankWindow = false;
-                }
-            }
-
-            if (showMenuSettings)
-            {
-                DrawSettingsWindow(solidBoxStyle, textStyle, btnStyle, () => showMenuSettings = false);
-            }
-
-            if (showHelpWindow)
-            {
-                GUI.Box(new Rect(0, 0, Screen.width, Screen.height), "");
-                Rect helpRect = new Rect(Screen.width * 0.5f - 300, Screen.height * 0.5f - 200, 600, 400);
-                GUI.Box(helpRect, "[ °ÔÀÓ ½ºÅä¸® ¹× Á¶ÀÛ µµ¿ò¸» ]", solidBoxStyle);
-                string helpMsg = "[½ºÅä¸® (¹Ì·¡ 3024³â)]\nÇ×·Î¸¦ ÀÌÅ»ÇÑ ÁÖÀÎ°ø ¿ìÁÖ¼±ÀÌ ÀûÀÇ À¯µµ ¹Ì»çÀÏÀ» ÇÇÇØ\nÀû³¢¸® ¸ÂÃß¸ç 3°³ÀÇ ½ºÅ×ÀÌÁö¸¦ Å»ÃâÇÏ´Â °ÔÀÓÀÔ´Ï´Ù!\n\n" +
-                                 "[Á¶ÀÛ ¹æ¹ı]\n- ¹æÇâÅ° (ÁÂ, ¿ì) : ¿ìÁÖ¼± È¸Àü  /  Left Shift : °¨¼Ó\n" +
-                                 "- Q Å° : ºñ»ó ÆøÅº (È­¸é ³» ¸ğµç Åº¸· Á¦°Å)\n" +
-                                 "- ¼ıÀÚ 1, 2 Å° : »óÁ¡¿¡¼­ ÀåÂøÇÑ ÆÄÃ÷ ½ºÅ³ ¹ßµ¿\n" +
-                                 "- ESC Å° : ÀÏ½ÃÁ¤Áö ¹× È¯°æ ¼³Á¤ / ÀúÀå\n" +
-                                 "- F6 Å° : ¼¼ÀÌºê ¹× ·©Å· µ¥ÀÌÅÍ ÃÊ±âÈ­ Ä¡Æ®";
-                GUI.Label(new Rect(helpRect.x + 20, helpRect.y + 50, 560, 260), helpMsg, textStyle);
-
-                if (GUI.Button(new Rect(helpRect.x + 225, helpRect.y + 330, 150, 50), "´İ±â", btnStyle))
-                {
-                    SoundManager.Play(SoundManager.Sfx.Click);
-                    showHelpWindow = false;
-                }
-            }
-        }
-
-        // =========================================================================
-        // 2. ÀÎ°ÔÀÓ »ç¸Á(Game Over) ½Ã 3°¡Áö ¼±ÅÃÃ¢
-        // =========================================================================
-        if (currentScene == "TeamProject" && showDeathMenu)
-        {
-            GUI.Box(new Rect(0, 0, Screen.width, Screen.height), "");
-            Rect dRect = new Rect(Screen.width * 0.5f - 240, Screen.height * 0.5f - 180, 480, 360);
-            GUI.Box(dRect, "[ ¿ìÁÖ¼± ÆÄ±« (GAME OVER) ]", solidBoxStyle);
-
-            GUI.Label(new Rect(dRect.x + 20, dRect.y + 55, 440, 50),
-                $"ÇöÀç ½ºÅ×ÀÌÁö: Stage {StageManager.CurrentStage}\n¿øÇÏ½Ã´Â ÁøÇà ¹æ½ÄÀ» ¼±ÅÃÇØ ÁÖ¼¼¿ä.", textStyle);
-
-            if (GUI.Button(new Rect(dRect.x + 60, dRect.y + 125, 360, 55), "´Ù½Ã ½ÃÀÛÇÏ±â", btnStyle))
-            {
-                SoundManager.Play(SoundManager.Sfx.Click);
-                if (DataManager.Instance != null) DataManager.Instance.currentStage = StageManager.CurrentStage;
-                showDeathMenu = false;
-                Time.timeScale = 1f;
-                SceneManager.LoadScene("TeamProject");
-            }
-
-            if (GUI.Button(new Rect(dRect.x + 60, dRect.y + 195, 360, 55), "ÀúÀå ÈÄ µ¹¾Æ°¡±â", btnStyle))
-            {
-                SoundManager.Play(SoundManager.Sfx.Click);
-                SaveCurrentProgress();
-                showDeathMenu = false;
-                Time.timeScale = 1f;
-                SceneManager.LoadScene("MainMenu");
-            }
-
-            if (GUI.Button(new Rect(dRect.x + 60, dRect.y + 265, 360, 55), "ÀúÀåÇÏÁö ¾Ê°í µ¹¾Æ°¡±â", btnStyle))
-            {
-                SoundManager.Play(SoundManager.Sfx.Click);
-                ClearSaveData();
-                ResetDataForNewGame();
-                showDeathMenu = false;
-                Time.timeScale = 1f;
-                SceneManager.LoadScene("MainMenu");
-            }
-        }
-
-        // =========================================================================
-        // 3. ÀÎ°ÔÀÓ ESC ÀÏ½ÃÁ¤Áö ¸Ş´º & È¯°æ ¼³Á¤Ã¢
-        // =========================================================================
-        if (currentScene == "TeamProject" && isPaused && !showDeathMenu)
-        {
-            GUI.Box(new Rect(0, 0, Screen.width, Screen.height), "");
-
-            if (!showSettingsInPause)
-            {
-                Rect pRect = new Rect(Screen.width * 0.5f - 220, Screen.height * 0.5f - 170, 440, 340);
-                GUI.Box(pRect, "[ ÀÏ½ÃÁ¤Áö (PAUSED) ]", solidBoxStyle);
-
-                if (GUI.Button(new Rect(pRect.x + 50, pRect.y + 80, 340, 55), "ÀÌ¾îÇÏ±â", btnStyle))
-                {
-                    SoundManager.Play(SoundManager.Sfx.Click);
-                    isPaused = false;
-                    Time.timeScale = 1f;
-                }
-
-                if (GUI.Button(new Rect(pRect.x + 50, pRect.y + 155, 340, 55), "¼³Á¤", btnStyle))
-                {
-                    SoundManager.Play(SoundManager.Sfx.Click);
-                    showSettingsInPause = true;
-                }
-
-                if (GUI.Button(new Rect(pRect.x + 50, pRect.y + 230, 340, 55), "ÀúÀå ÈÄ µ¹¾Æ°¡±â", btnStyle))
-                {
-                    SoundManager.Play(SoundManager.Sfx.Click);
-                    SaveCurrentProgress();
-                    isPaused = false;
-                    Time.timeScale = 1f;
-                    SceneManager.LoadScene("MainMenu");
-                }
-            }
-            else
-            {
-                DrawSettingsWindow(solidBoxStyle, textStyle, btnStyle, () => showSettingsInPause = false);
-            }
-        }
-
-        // =========================================================================
-        // 4. 3½ºÅ×ÀÌÁö Å¬¸®¾î ½Ã Top 5 ¾ÆÀÌµğ ÀÔ·ÂÃ¢ (½ÂÈÄ ´Ô ¿å¼³ °Ë¿­ À¯Áö) & ¿£µù ¸Ş½ÃÁö
-        // =========================================================================
-        if (showEndingRankInput && DataManager.Instance != null)
-        {
-            GUI.Box(new Rect(0, 0, Screen.width, Screen.height), "");
-            Rect inRect = new Rect(Screen.width * 0.5f - 260, Screen.height * 0.5f - 150, 520, 300);
-            GUI.Box(inRect, "[ ÃàÇÏÇÕ´Ï´Ù! TOP 5 ±â·Ï ´Ş¼º! ]", solidBoxStyle);
-
-            GUI.Label(new Rect(inRect.x + 20, inRect.y + 60, 480, 60),
-                $"ÃÖÁ¾ Á¡¼ö: {DataManager.Instance.currentScore} Á¡\n·©Å·¿¡ µî·ÏÇÒ ¾ÆÀÌµğ(ID)¸¦ ÀÔ·ÂÇØ ÁÖ¼¼¿ä:", textStyle);
-
-            GUIStyle fieldStyle = new GUIStyle(GUI.skin.textField) { fontSize = 24, alignment = TextAnchor.MiddleCenter };
-            if (customKoreanFont != null) fieldStyle.font = customKoreanFont;
-
-            string newInput = GUI.TextField(new Rect(inRect.x + 110, inRect.y + 135, 300, 45), inputPlayerId, 12, fieldStyle);
-            if (newInput != inputPlayerId) rankInputWarning = "";
-            inputPlayerId = newInput;
-
-            // [½ÂÈÄ ´Ô ±¸Çö À¯Áö] ¿å¼³ ÀÔ·Â ½Ã °æ°í ¹®±¸ Ç¥½Ã
-            if (!string.IsNullOrEmpty(rankInputWarning))
-            {
-                GUIStyle warnStyle = new GUIStyle(textStyle) { fontSize = 16, fontStyle = FontStyle.Bold };
-                warnStyle.normal.textColor = new Color(1f, 0.35f, 0.35f);
-                GUI.Label(new Rect(inRect.x + 20, inRect.y + 182, 480, 26), rankInputWarning, warnStyle);
-            }
-
-            if (GUI.Button(new Rect(inRect.x + 160, inRect.y + 210, 200, 55), "·©Å· µî·Ï ¿Ï·á", btnStyle))
-            {
-                string finalName = string.IsNullOrWhiteSpace(inputPlayerId) ? "PLAYER" : inputPlayerId.Trim();
-
-                if (ContainsBadWord(finalName))
-                {
-                    SoundManager.Play(SoundManager.Sfx.Deny);
-                    rankInputWarning = "ºÎÀûÀıÇÑ ´Ü¾î°¡ Æ÷ÇÔµÈ ¾ÆÀÌµğ´Â µî·ÏÇÒ ¼ö ¾ø½À´Ï´Ù.";
-                    inputPlayerId = "";
-                }
-                else
-                {
-                    SoundManager.Play(SoundManager.Sfx.Click);
-                    DataManager.Instance.AddRanking(finalName, DataManager.Instance.currentScore);
-                    ResetDataForNewGame();
-                    rankInputWarning = "";
-                    showEndingRankInput = false;
-                    showEndingMessage = true;
-                }
-            }
-        }
-
-        if (showEndingMessage)
-        {
-            GUI.Box(new Rect(0, 0, Screen.width, Screen.height), "");
-            Rect endRect = new Rect(Screen.width * 0.5f - 320, Screen.height * 0.5f - 180, 640, 360);
-            GUI.Box(endRect, "[ Áö±¸ ±ÍÈ¯ ¼º°ø (ENDING) ]", solidBoxStyle);
-
-            string endingStory = "¿Ü°è ºñÇàÃ¼µéÀÇ °Å¼¾ À¯µµ ¹Ì»çÀÏ °ø°İ°ú ¼º¿îÀÇ ¾îµÒÀ» ¶Õ°í\n" +
-                                 "¸¶Ä§³» Á¤»ó Ç×·Î¸¦ µÇÃ£´Â µ¥ ¼º°øÇß½À´Ï´Ù!\n\n" +
-                                 "¹«»çÈ÷ ¹Ì·¡ 3024³âÀÇ Áö±¸·Î ±ÍÈ¯ÇÑ ÁÖÀÎ°øÀÇ È°¾àÀ¸·Î\n" +
-                                 "È²ÆóÇØÁø Áö±¸´Â ´Ù½Ã±İ »õ·Î¿î Èñ¸ÁÀ» ¸ÂÀÌÇÏ°Ô µË´Ï´Ù.\n\n" +
-                                 "ÇÃ·¹ÀÌÇØ ÁÖ¼Å¼­ °¨»çÇÕ´Ï´Ù!";
-            GUI.Label(new Rect(endRect.x + 30, endRect.y + 60, 580, 200), endingStory, textStyle);
-
-            if (GUI.Button(new Rect(endRect.x + 220, endRect.y + 280, 200, 55), "¸ŞÀÎ ¸Ş´º·Î ÀÌµ¿", btnStyle))
-            {
-                SoundManager.Play(SoundManager.Sfx.Click);
-                ResetDataForNewGame();
-                showEndingMessage = false;
-                IsEndingProcessDone = true;
-            }
-        }
-    }
-
-    private void DrawSettingsWindow(GUIStyle boxStyle, GUIStyle textStyle, GUIStyle btnStyle, System.Action onClose)
-    {
-        GUI.Box(new Rect(0, 0, Screen.width, Screen.height), "");
-        Rect sRect = new Rect(Screen.width * 0.5f - 250, Screen.height * 0.5f - 180, 500, 360);
-        GUI.Box(sRect, "[ È¯°æ ¼³Á¤ (SETTINGS) ]", boxStyle);
-
-        if (SoundManager.Instance != null)
-        {
-            GUI.Label(new Rect(sRect.x + 40, sRect.y + 70, 420, 30), $"¹è°æÀ½¾Ç(BGM) À½·® : {Mathf.RoundToInt(SoundManager.Instance.BgmVolume * 100)}%", textStyle);
-            SoundManager.Instance.BgmVolume = GUI.HorizontalSlider(new Rect(sRect.x + 80, sRect.y + 110, 340, 30), SoundManager.Instance.BgmVolume, 0f, 1f);
-
-            GUI.Label(new Rect(sRect.x + 40, sRect.y + 150, 420, 30), $"È¿°úÀ½(SFX) À½·® : {Mathf.RoundToInt(SoundManager.Instance.SfxVolume * 100)}%", textStyle);
-            SoundManager.Instance.SfxVolume = GUI.HorizontalSlider(new Rect(sRect.x + 80, sRect.y + 190, 340, 30), SoundManager.Instance.SfxVolume, 0f, 1f);
-        }
-
-        string screenModeText = Screen.fullScreen ? "ÇöÀç: ÀüÃ¼È­¸é ¸ğµå (Å¬¸¯ ½Ã Ã¢¸ğµå)" : "ÇöÀç: Ã¢¸ğµå (Å¬¸¯ ½Ã ÀüÃ¼È­¸é)";
-        if (GUI.Button(new Rect(sRect.x + 60, sRect.y + 230, 380, 45), screenModeText, btnStyle))
-        {
-            SoundManager.Play(SoundManager.Sfx.Click);
-            Screen.fullScreen = !Screen.fullScreen;
-        }
-
-        if (GUI.Button(new Rect(sRect.x + 150, sRect.y + 290, 200, 50), "´İ±â", btnStyle))
-        {
-            SoundManager.Play(SoundManager.Sfx.Click);
-            onClose?.Invoke();
+            endingStoryPanel.SetActive(true);
         }
     }
 

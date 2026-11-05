@@ -28,9 +28,7 @@ public class ExplosionSettings
 [RequireComponent(typeof(Rigidbody2D))]
 public class EnemyBullet : MonoBehaviour
 {
-    // === 추가된 부분: 스킬 제어 상태 플래그 ===
     public bool isOverriddenBySkill = false;
-    // =====================================
 
     private const float ArmTime = 0.3f;
 
@@ -73,9 +71,7 @@ public class EnemyBullet : MonoBehaviour
 
     void FixedUpdate()
     {
-        // === 추가된 부분: 스킬에 의해 제어 중이거나 폭발 중이면 기본 이동 중지 ===
         if (exploding || isOverriddenBySkill) return;
-        // ==========================================================
 
         age += Time.fixedDeltaTime;
 
@@ -123,6 +119,8 @@ public class EnemyBullet : MonoBehaviour
     {
         if (exploding) return;
         exploding = true;
+
+        SoundManager.Play(SoundManager.Sfx.MissileExplosion); // [사운드 연동] 폭발 발생 시 미사일 폭발음 재생
 
         rb.linearVelocity = Vector2.zero;
         rb.simulated = false;

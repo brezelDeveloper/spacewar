@@ -74,7 +74,7 @@ public class CheatManager : MonoBehaviour
 
     private void SkipStage()
     {
-        StageManager.SkipStage();
+        StageManager.SkipStage(); // StageManager 내부에서 CheatSkipStage 효과음 재생
         Debug.Log("[치트] 스테이지 넘기기");
     }
 
@@ -96,6 +96,7 @@ public class CheatManager : MonoBehaviour
     private void ToggleDebugMode()
     {
         debugMode = !debugMode;
+        SoundManager.Play(SoundManager.Sfx.CheatDebug); // [사운드 연동] 디버그 모드 토글 사운드
         Debug.Log($"[치트] 디버그 모드: {(debugMode ? "ON" : "OFF")}");
 
         if (debugMode) refreshTimer = refreshInterval;
@@ -238,6 +239,7 @@ public class CheatManager : MonoBehaviour
     private void ToggleInvincible()
     {
         invincible = !invincible;
+        SoundManager.Play(SoundManager.Sfx.CheatInvincible); // [사운드 연동] 무적 모드 토글 사운드
         Debug.Log($"[치트] 무적: {(invincible ? "ON" : "OFF")}");
     }
 
@@ -261,6 +263,7 @@ public class CheatManager : MonoBehaviour
             count++;
         }
 
+        SoundManager.Play(SoundManager.Sfx.CheatKillAll); // [사운드 연동] 화면 적 전멸 치트 사운드
         Debug.Log($"[치트] 강제 적 사망: {count}마리");
     }
 
@@ -273,6 +276,7 @@ public class CheatManager : MonoBehaviour
         }
 
         DataManager.Instance.money += moneyAmount;
+        SoundManager.Play(SoundManager.Sfx.CheatAddMoney); // [사운드 연동] 재화 추가 치트 사운드
         Debug.Log($"[치트] 돈 +{moneyAmount} (현재 {DataManager.Instance.money})");
     }
 

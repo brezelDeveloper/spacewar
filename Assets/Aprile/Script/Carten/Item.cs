@@ -23,8 +23,10 @@ public class Item : MonoBehaviour
     // 퀵슬롯 스킬 실행 (Player.cs에서 호출)
     public bool ExecuteSkill(PartType skill)
     {
+        // 쿨타임 검사: 대기 시간 중이면 거절 효과음 재생 후 취소
         if (cooldownEnd.TryGetValue(skill, out float end) && Time.time < end)
         {
+            SoundManager.Play(SoundManager.Sfx.Deny); // [사운드 연동] 쿨타임 진행 중 거절음
             Debug.Log($"{skill} 재사용 대기 중 (남은 시간: {end - Time.time:F1}초)");
             return false;
         }
@@ -39,9 +41,11 @@ public class Item : MonoBehaviour
             case PartType.SlowField: success = ExecuteSlowField(); break;
         }
 
+        // 실제로 스킬 발동에 성공했을 때만 파츠별 전용 사운드 재생
         if (success)
         {
             cooldownEnd[skill] = Time.time + skillCooldown;
+            SoundManager.PlaySkill((int)skill); // [사운드 연동] 1~5번 파츠별 맞춤 효과음 자동 분기
             Debug.Log($"[스킬 발동 성공] {skill}");
         }
         return success;
@@ -100,7 +104,6 @@ public class Item : MonoBehaviour
             yield return null;
         }
 
-        // 시간 정지 해제
         EnemyBullet[] remainBullets = FindObjectsByType<EnemyBullet>(FindObjectsSortMode.None);
         foreach (var bullet in remainBullets)
         {
@@ -157,7 +160,7 @@ public class Item : MonoBehaviour
 
                     if (pullDir.magnitude < 0.8f)
                     {
-                        Destroy(bullet.gameObject); // 블랙홀 중심에 도달하면 소멸
+                        Destroy(bullet.gameObject);
                     }
                     else
                     {

@@ -1,5 +1,13 @@
 fileFormatVersion: 2
 guid: 08d054ec8b01d3e44895453ba1fe3338
+AssetOrigin:
+  serializedVersion: 1
+  productId: 68228
+  packageName: 8-Bit Style Sound Effects
+  packageVersion: 1.1
+  assetPath: Assets/8-Bit Style Sound Effects/Lo-Fi_8-Bit_11025Hz [Tiny Files]/Loading
+    03_8-Bit_11025Hz.wav
+  uploadId: 148137
 AudioImporter:
   externalObjects: {}
   serializedVersion: 8
@@ -21,11 +29,3 @@ AudioImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 68228
-  packageName: 8-Bit Style Sound Effects
-  packageVersion: 1.1
-  assetPath: Assets/8-Bit Style Sound Effects/Lo-Fi_8-Bit_11025Hz [Tiny Files]/Loading
-    03_8-Bit_11025Hz.wav
-  uploadId: 148137

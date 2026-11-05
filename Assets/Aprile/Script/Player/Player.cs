@@ -84,7 +84,7 @@ public class Player : MonoBehaviour
     private Coroutine flashRoutine;
     private bool isMoving;
     private bool isDead;
-    private bool isDefenseUp; // 방어력 강화 아이템 상태 스위치
+    private bool isDefenseUp;
     private float turnVelocity;
     private Vector2 bounceVelocity;
     private float bounceTimer;
@@ -229,24 +229,23 @@ public class Player : MonoBehaviour
         TakeDamage(damagePerHit);
     }
 
-    // ---------------- [아이템 효과 함수 3종 (중복 제거 완료)] ----------------
-    // 1. 생명력 회복 아이템 효과 (기획서 11-③: 습득과 동시에 생명치 증가)
     public void Heal(int amount)
     {
         currentHp = Mathf.Min(maxHp, currentHp + amount);
+        SoundManager.Play(SoundManager.Sfx.ItemPickup); // 회복 아이템 획득 시 사운드
         Debug.Log($"[아이템] 생명력 +{amount} 회복! 현재 HP: {currentHp}/{maxHp}");
     }
 
-    // 2. 일정 시간 무적 아이템 효과 (기획서 9-②)
     public void ActivateInvincibleItem(float duration)
     {
         MakeInvincible(duration, true);
+        SoundManager.Play(SoundManager.Sfx.ItemPickup); // 무적 아이템 획득 시 사운드
         Debug.Log($"[아이템] {duration}초 동안 무적 효과 발동!");
     }
 
-    // 3. 일정 시간 방어력 강화 아이템 효과 (기획서 9-②)
     public void ActivateDefenseUpItem(float duration)
     {
+        SoundManager.Play(SoundManager.Sfx.ItemPickup); // 방어력 아이템 획득 시 사운드
         StartCoroutine(DefenseUpRoutine(duration));
     }
 
@@ -284,11 +283,10 @@ public class Player : MonoBehaviour
     {
         if (isDead || IsInvincible) return;
 
-        // 방어력 강화 중이면 데미지를 절반(최소 1)으로 감소
         int finalDamage = isDefenseUp ? Mathf.Max(1, damage / 2) : damage;
         currentHp = Mathf.Max(0, currentHp - finalDamage);
 
-        SoundManager.Play(SoundManager.Sfx.Hit);
+        SoundManager.Play(SoundManager.Sfx.PlayerHit); // [사운드 연동] 플레이어 피격 전용 사운드
         Debug.Log($"피격! HP: {currentHp}/{maxHp}");
 
         if (currentHp <= 0)
@@ -303,6 +301,8 @@ public class Player : MonoBehaviour
     private void Die()
     {
         isDead = true;
+        SoundManager.Play(SoundManager.Sfx.PlayerDeath); // [사운드 연동] 플레이어 사망 전용 사운드
+
         StopAllCoroutines();
         SetFlashAlpha(0f);
 
@@ -390,7 +390,7 @@ public class Player : MonoBehaviour
         Item item = GetComponent<Item>();
         if (item != null)
         {
-            item.ExecuteSkill(skill);
+            item.ExecuteSkill(skill); // Item.cs 내부에서 쿨타임 및 성공 여부 체크 후 사운드 재생
         }
     }
 

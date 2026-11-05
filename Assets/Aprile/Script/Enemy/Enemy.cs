@@ -71,10 +71,10 @@ public class Enemy : MonoBehaviour
     [SerializeField] private int money = 10;
 
     [Header("아이템 드랍 설정")]
-    [SerializeField] private GameObject[] normalItemPrefabs; // 일반 아이템 3종 (회복, 무적, 방어력)
-    [SerializeField] private GameObject rareItemPrefab;      // 고급 아이템 1종
-    [SerializeField, Range(0f, 1f)] private float normalDropChance = 0.35f; // 일반 아이템 드랍 확률 (35%)
-    [SerializeField, Range(0f, 1f)] private float rareDropChance = 0.10f;   // 고급 아이템 드랍 확률 (10%)
+    [SerializeField] private GameObject[] normalItemPrefabs;
+    [SerializeField] private GameObject rareItemPrefab;
+    [SerializeField, Range(0f, 1f)] private float normalDropChance = 0.35f;
+    [SerializeField, Range(0f, 1f)] private float rareDropChance = 0.10f;
 
     [Header("화면 밖으로 밀려났을 때")]
     [SerializeField] private float returnSpeed = 6f;
@@ -248,8 +248,7 @@ public class Enemy : MonoBehaviour
 
     void Shoot(EnemyBullet prefab, float angle, bool homing, float life = 0f, ExplosionSettings blast = null)
     {
-
-        SoundManager.Play(SoundManager.Sfx.Shoot); // [추가] 미사일 발사 효과음!
+        SoundManager.Play(SoundManager.Sfx.PlayerShoot);
         if (prefab == null) return;
 
         EnemyBullet shot = Instantiate(prefab, rb.position, Quaternion.Euler(0f, 0f, angle));
@@ -282,7 +281,7 @@ public class Enemy : MonoBehaviour
         if (dead) return;
 
         hp -= amount;
-        SoundManager.Play(SoundManager.Sfx.Hit);
+        SoundManager.Play(SoundManager.Sfx.EnemyHit); // [사운드 연동] 일반 적 피격 전용 사운드
         Debug.Log($"{name} HP {Mathf.Max(hp, 0)}/{maxHp}");
 
         if (hp <= 0)
@@ -296,6 +295,7 @@ public class Enemy : MonoBehaviour
         if (dead) return;
         dead = true;
 
+        SoundManager.Play(SoundManager.Sfx.EnemyDeath); // [사운드 연동] 일반 적 사망 전용 사운드
         KillCount++;
 
         if (DataManager.Instance != null)
@@ -304,8 +304,7 @@ public class Enemy : MonoBehaviour
             DataManager.Instance.money += money;
         }
 
-        // [아이템 드랍 로직] 1순위: 고급 아이템 확률 검사 -> 2순위: 일반 아이템 확률 검사
-        float roll = Random.value; // 0.0 ~ 1.0 사이의 랜덤 숫자 뽑기
+        float roll = Random.value;
         if (rareItemPrefab != null && roll <= rareDropChance)
         {
             Instantiate(rareItemPrefab, transform.position, Quaternion.identity);
