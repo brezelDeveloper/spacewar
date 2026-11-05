@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 2732081532219571159}
   - component: {fileID: 4110392875293368460}
   - component: {fileID: 2655109895151733678}
+  - component: {fileID: 281653710532797199}
   m_Layer: 0
   m_Name: BomberEnemy
   m_TagString: Enemy
@@ -147,6 +148,20 @@ CircleCollider2D:
   m_CompositeOrder: 0
   m_Offset: {x: 0, y: 0}
   m_Radius: 0.7
+--- !u!114 &281653710532797199
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6759854012759541385}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8d5273fba4b0b7d4a89f6767633d1ae8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  hitEffectPrefab: {fileID: 0}
+  deathEffectPrefab: {fileID: 6192724089161036641, guid: e17d9a3f04750764c8c0a7a0461e4c3b, type: 3}
 --- !u!1 &7378993355334422516
 GameObject:
   m_ObjectHideFlags: 0

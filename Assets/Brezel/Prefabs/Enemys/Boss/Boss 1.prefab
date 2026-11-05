@@ -18,6 +18,7 @@ GameObject:
   - component: {fileID: 8689560984613079160}
   - component: {fileID: 8483896080586971072}
   - component: {fileID: 127472963107049721}
+  - component: {fileID: 3684645456300306217}
   m_Layer: 0
   m_Name: Boss 1
   m_TagString: Enemy
@@ -436,6 +437,26 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 4, y: 2.4}
   m_EdgeRadius: 0
+--- !u!114 &3684645456300306217
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 929845143820434137}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 21a40062333806d478748998c4e0031e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  hitEffectPrefab: {fileID: 4794043405585894037, guid: 37138c0c33167b04fa1fb90b7f5a794f, type: 3}
+  hitEffectScale: 1.5
+  hitEffectLifetime: 2.5
+  deathEffectPrefab: {fileID: 8038344524183138613, guid: 0277167a12290af47801444830a2be97, type: 3}
+  deathEffectScale: 2.5
+  deathBurstCount: 6
+  deathSpreadRatio: 0.6
+  deathEffectLifetime: 3
 --- !u!1 &2569514690865247951
 GameObject:
   m_ObjectHideFlags: 0

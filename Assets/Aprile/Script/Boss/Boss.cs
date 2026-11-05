@@ -96,11 +96,13 @@ public class Boss : MonoBehaviour
     private Coroutine blinkRoutine;
 
     private Rigidbody2D rb;
+    private BossEffect effect; // [동료분 추가] 피격/사망 이펙트 담당
     private Camera cam;
     private Player target;
     private Vector2 lastPlayerPos;
     private Vector2 playerVelocity;
     private Vector2 wanderPoint;
+    private Vector2 hitPoint;  // [동료분 추가] 마지막으로 부딪힌 위치 (피격 이펙트 위치)
     private int hp;
     private int patternIndex;
     private float fireTimer;
@@ -114,6 +116,7 @@ public class Boss : MonoBehaviour
     void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
+        effect = GetComponent<BossEffect>(); // [동료분 추가] 같은 오브젝트의 BossEffect 가져오기
         cam = Camera.main;
         hp = maxHp;
         fireTimer = fireInterval;
@@ -194,7 +197,7 @@ public class Boss : MonoBehaviour
             if (InZone(rb.position))
             {
                 entered = true;
-                SoundManager.PlayBossBGM(); // [사운드 연동] 보스 등장 완료 시 보스 BGM 재생
+                SoundManager.PlayBossBGM(); // [병합 유지] 보스 등장 완료 시 보스 BGM 재생
                 PickWanderPoint();
             }
             return;
@@ -331,8 +334,9 @@ public class Boss : MonoBehaviour
 
     void Shoot(EnemyBullet prefab, float angle, bool homing, float life = 0f, ExplosionSettings blast = null)
     {
-        SoundManager.Play(SoundManager.Sfx.PlayerShoot); // 탄 사격 효과음
-        if (prefab == null) return;
+        if (prefab == null || target == null) return;
+
+        SoundManager.Play(SoundManager.Sfx.PlayerShoot); // Shoot -> PlayerShoot 으로 변경
 
         EnemyBullet shot = Instantiate(prefab, rb.position, Quaternion.Euler(0f, 0f, angle));
         shot.Launch(target.transform, damage, homing, bullet, life, blast);
@@ -351,13 +355,16 @@ public class Boss : MonoBehaviour
         Player player = other.GetComponentInParent<Player>();
         if (player == null || player.IsDead) return;
 
+        // 1. 플레이어가 보스 몸을 통과하지 못하도록 쿨타임과 상관없이 항상 바깥으로 튕겨냄
         Vector2 away = (Vector2)player.transform.position - rb.position;
         if (away.sqrMagnitude < 0.001f) away = Vector2.down;
         player.Bounce(away, bounceDistance, bounceDuration);
 
+        // 2. 보스 체력을 깎는 데미지만 쿨타임(ramTimer)마다 1번씩 들어가도록 분리
         if (ramTimer <= 0f)
         {
             ramTimer = ramCooldown;
+            hitPoint = other.ClosestPoint(rb.position); // [동료분 추가] 부딪힌 위치 저장
             TakeDamage(ramDamage);
         }
     }
@@ -367,7 +374,7 @@ public class Boss : MonoBehaviour
         if (dead) return;
 
         hp -= amount;
-        SoundManager.Play(SoundManager.Sfx.BossHit); // [사운드 연동] 보스 피격 전용 사운드
+        SoundManager.Play(SoundManager.Sfx.BossHit); // Hit -> BossHit 으로 변경
         Debug.Log($"보스 HP {Mathf.Max(hp, 0)}/{maxHp}");
 
         if (hp <= 0)
@@ -375,6 +382,14 @@ public class Boss : MonoBehaviour
             Die();
             return;
         }
+
+        // [동료분 추가] 피격 이펙트 (부딪힌 위치가 없으면 보스 중심에서 재생)
+        if (effect != null)
+        {
+            Vector3 pos = hitPoint != Vector2.zero ? (Vector3)hitPoint : transform.position;
+            effect.PlayHitEffect(pos);
+        }
+        hitPoint = Vector2.zero;
 
         if (blinkRoutine != null) StopCoroutine(blinkRoutine);
         blinkRoutine = StartCoroutine(HitBlinkRoutine());
@@ -407,7 +422,9 @@ public class Boss : MonoBehaviour
     void Die()
     {
         dead = true;
-        SoundManager.Play(SoundManager.Sfx.BossDeath); // [사운드 연동] 보스 사망 전용 사운드
+
+        if (effect != null) effect.PlayDeathEffect(); // [동료분 추가] 사망 이펙트
+        SoundManager.PlayStageBGM();                  // 보스 처치 후 기본 스테이지 BGM 복구
 
         if (DataManager.Instance != null)
         {
@@ -418,5 +435,7 @@ public class Boss : MonoBehaviour
         Debug.Log("보스 처치");
         Defeated?.Invoke();
         Destroy(gameObject);
+
+        SoundManager.Play(SoundManager.Sfx.BossHit); // Hit -> BossHit 으로 변경
     }
 }

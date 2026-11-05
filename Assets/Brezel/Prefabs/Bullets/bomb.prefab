@@ -79,7 +79,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: 9107517863676832010, guid: 853cff3d1aab30247a292b64c92acfde, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 9c7df7a295e42674eb093a49346a77db, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -152,7 +152,7 @@ CircleCollider2D:
   m_CompositeOperation: 0
   m_CompositeOrder: 0
   m_Offset: {x: 0, y: 0}
-  m_Radius: 0.175
+  m_Radius: 0.13
 --- !u!114 &1813354855775909133
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -165,12 +165,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a9fbe609652a2446a5ae1a38979bb90, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speed: 5
-  turnSpeed: 90
-  lifeTime: 6
-  armTime: 0.3
-  homingTime: 4
-  explosionRadius: 1.2
-  explosionPrefab: {fileID: 9056364419108637597, guid: 208bb22eb0d94d541a9efbda6a3f0283, type: 3}
-  explosionTime: 0.35
+  isOverriddenBySkill: 0
   logHits: 0

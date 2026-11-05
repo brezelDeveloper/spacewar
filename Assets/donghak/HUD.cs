@@ -10,6 +10,9 @@ public class HUD : MonoBehaviour
     [SerializeField] private TMP_Text hpText;
     [SerializeField] private TMP_Text bombText;
 
+    [Header("폭탄 UI (쿨타임 게이지)")] // 새로 추가한 인스펙터 속성
+    [SerializeField] private Image bombGaugeFill;
+
     [Header("기록")]
     [SerializeField] private TMP_Text stageText;
     [SerializeField] private TMP_Text timeText;
@@ -52,15 +55,32 @@ public class HUD : MonoBehaviour
         if (player == null) player = FindAnyObjectByType<Player>();
         if (player == null) return;
 
+        // HP 갱신
         SetBar(hpBar, player.HpRatio);
         if (hpBar != null) hpBar.color = player.HpRatio <= lowHpRatio ? hpLowColor : hpColor;
         SetText(hpText, $"HP {player.CurrentHp}/{player.MaxHp}");
 
+        // 폭탄 텍스트 및 게이지 갱신 (쿨타임 방식)
         if (bombText != null)
         {
-            bool ready = player.BombCount > 0;
-            SetText(bombText, ready ? $"폭탄 [Q] x{player.BombCount}" : "폭탄 없음");
-            bombText.color = ready ? bombReadyColor : bombEmptyColor;
+            if (player.IsBombReady)
+            {
+                SetText(bombText, "폭탄 [Q] READY");
+                bombText.color = bombReadyColor;
+            }
+            else
+            {
+                // 남은 시간 초 단위로 올림하여 표시
+                int remainSec = Mathf.CeilToInt(player.BombCooldownRatio * 10f);
+                SetText(bombText, $"폭탄 [Q] {remainSec}초");
+                bombText.color = bombEmptyColor;
+            }
+        }
+
+        // 폭탄 게이지 이미지 갱신 (필요시)
+        if (bombGaugeFill != null)
+        {
+            bombGaugeFill.fillAmount = 1f - player.BombCooldownRatio;
         }
     }
 

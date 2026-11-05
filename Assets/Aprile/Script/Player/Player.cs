@@ -50,8 +50,8 @@ public class Player : MonoBehaviour
     [Tooltip("미사일이 아닌 EnemyBullet 태그 물체(운석 등)에 맞았을 때 깎이는 양")]
     [SerializeField] private int damagePerHit = 1;
 
-    [Header("폭탄")]
-    [SerializeField] private int bombCount = 3;
+    [Header("폭탄 (쿨타임 방식)")]
+    [SerializeField] private float bombCooldown = 10f; // 쿨타임 10초
     [Tooltip("폭탄을 쓸 때 번쩍이는 화면 전체 흰색 이미지 (Raycast Target 끄기)")]
     [SerializeField] private Image bombFlash;
     [Tooltip("번쩍일 때 최대 밝기 (0~1)")]
@@ -88,11 +88,16 @@ public class Player : MonoBehaviour
     private float turnVelocity;
     private Vector2 bounceVelocity;
     private float bounceTimer;
+    private float bombTimer = 0f; // 폭탄 쿨타임 타이머
 
     public int CurrentHp => currentHp;
     public int MaxHp => maxHp;
     public float HpRatio => (float)currentHp / maxHp;
-    public int BombCount => bombCount;
+
+    // HUD 참조용 프로퍼티 (폭탄 쿨타임)
+    public float BombCooldownRatio => Mathf.Clamp01(bombTimer / bombCooldown);
+    public bool IsBombReady => bombTimer <= 0f;
+
     public bool IsDead => isDead;
     public bool IsInvincible => CheatInvincible || Time.time < invincibleUntil;
     public bool CheatInvincible { get; set; }
@@ -132,7 +137,15 @@ public class Player : MonoBehaviour
 
         HandleMovement();
 
-        if (Input.GetKeyDown(bombKey) && bombCount > 0)
+        // 폭탄 타이머 갱신
+        if (bombTimer > 0f)
+        {
+            bombTimer -= Time.deltaTime;
+            if (bombTimer < 0f) bombTimer = 0f;
+        }
+
+        // Q키 입력 조건: IsBombReady로 체크
+        if (Input.GetKeyDown(bombKey) && IsBombReady)
         {
             UseBomb();
         }
@@ -232,20 +245,20 @@ public class Player : MonoBehaviour
     public void Heal(int amount)
     {
         currentHp = Mathf.Min(maxHp, currentHp + amount);
-        SoundManager.Play(SoundManager.Sfx.ItemPickup); // 회복 아이템 획득 시 사운드
+        SoundManager.Play(SoundManager.Sfx.ItemPickup);
         Debug.Log($"[아이템] 생명력 +{amount} 회복! 현재 HP: {currentHp}/{maxHp}");
     }
 
     public void ActivateInvincibleItem(float duration)
     {
         MakeInvincible(duration, true);
-        SoundManager.Play(SoundManager.Sfx.ItemPickup); // 무적 아이템 획득 시 사운드
+        SoundManager.Play(SoundManager.Sfx.ItemPickup);
         Debug.Log($"[아이템] {duration}초 동안 무적 효과 발동!");
     }
 
     public void ActivateDefenseUpItem(float duration)
     {
-        SoundManager.Play(SoundManager.Sfx.ItemPickup); // 방어력 아이템 획득 시 사운드
+        SoundManager.Play(SoundManager.Sfx.ItemPickup);
         StartCoroutine(DefenseUpRoutine(duration));
     }
 
@@ -286,7 +299,7 @@ public class Player : MonoBehaviour
         int finalDamage = isDefenseUp ? Mathf.Max(1, damage / 2) : damage;
         currentHp = Mathf.Max(0, currentHp - finalDamage);
 
-        SoundManager.Play(SoundManager.Sfx.PlayerHit); // [사운드 연동] 플레이어 피격 전용 사운드
+        SoundManager.Play(SoundManager.Sfx.PlayerHit);
         Debug.Log($"피격! HP: {currentHp}/{maxHp}");
 
         if (currentHp <= 0)
@@ -301,7 +314,7 @@ public class Player : MonoBehaviour
     private void Die()
     {
         isDead = true;
-        SoundManager.Play(SoundManager.Sfx.PlayerDeath); // [사운드 연동] 플레이어 사망 전용 사운드
+        SoundManager.Play(SoundManager.Sfx.PlayerDeath);
 
         StopAllCoroutines();
         SetFlashAlpha(0f);
@@ -362,7 +375,7 @@ public class Player : MonoBehaviour
 
     private void UseBomb()
     {
-        bombCount--;
+        bombTimer = bombCooldown; // 타이머 초기화 (쿨타임 시작)
         SoundManager.Play(SoundManager.Sfx.Bomb);
 
         foreach (GameObject bullet in GameObject.FindGameObjectsWithTag(enemyBulletTag))
@@ -390,7 +403,7 @@ public class Player : MonoBehaviour
         Item item = GetComponent<Item>();
         if (item != null)
         {
-            item.ExecuteSkill(skill); // Item.cs 내부에서 쿨타임 및 성공 여부 체크 후 사운드 재생
+            item.ExecuteSkill(skill);
         }
     }
 

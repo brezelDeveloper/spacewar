@@ -71,10 +71,10 @@ public class Enemy : MonoBehaviour
     [SerializeField] private int money = 10;
 
     [Header("아이템 드랍 설정")]
-    [SerializeField] private GameObject[] normalItemPrefabs;
-    [SerializeField] private GameObject rareItemPrefab;
-    [SerializeField, Range(0f, 1f)] private float normalDropChance = 0.35f;
-    [SerializeField, Range(0f, 1f)] private float rareDropChance = 0.10f;
+    [SerializeField] private GameObject[] normalItemPrefabs; // 일반 아이템 3종 (회복, 무적, 방어력)
+    [SerializeField] private GameObject rareItemPrefab;      // 고급 아이템 1종
+    [SerializeField, Range(0f, 1f)] private float normalDropChance = 0.35f; // 일반 아이템 드랍 확률 (35%)
+    [SerializeField, Range(0f, 1f)] private float rareDropChance = 0.10f;   // 고급 아이템 드랍 확률 (10%)
 
     [Header("화면 밖으로 밀려났을 때")]
     [SerializeField] private float returnSpeed = 6f;
@@ -85,6 +85,7 @@ public class Enemy : MonoBehaviour
     private const float ReturnTime = 0.5f;
 
     private Rigidbody2D rb;
+    private EnemyEffect effect; // [동료분 추가] 피격/사망 이펙트 담당
     private Camera cam;
     private Player target;
     private Vector2 lastPlayerPos;
@@ -100,6 +101,7 @@ public class Enemy : MonoBehaviour
     void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
+        effect = GetComponent<EnemyEffect>(); // [동료분 추가] 같은 오브젝트의 EnemyEffect 가져오기
         cam = Camera.main;
         hp = maxHp;
         fireTimer = Random.Range(0.5f, fireInterval);
@@ -248,8 +250,9 @@ public class Enemy : MonoBehaviour
 
     void Shoot(EnemyBullet prefab, float angle, bool homing, float life = 0f, ExplosionSettings blast = null)
     {
-        SoundManager.Play(SoundManager.Sfx.PlayerShoot);
-        if (prefab == null) return;
+        if (prefab == null || target == null) return;
+
+        SoundManager.Play(SoundManager.Sfx.PlayerShoot); // Shoot -> PlayerShoot 으로 변경
 
         EnemyBullet shot = Instantiate(prefab, rb.position, Quaternion.Euler(0f, 0f, angle));
         shot.Launch(target.transform, damage, homing, bullet, life, blast);
@@ -281,12 +284,16 @@ public class Enemy : MonoBehaviour
         if (dead) return;
 
         hp -= amount;
-        SoundManager.Play(SoundManager.Sfx.EnemyHit); // [사운드 연동] 일반 적 피격 전용 사운드
+        SoundManager.Play(SoundManager.Sfx.EnemyHit); // Hit -> EnemyHit 으로 변경
         Debug.Log($"{name} HP {Mathf.Max(hp, 0)}/{maxHp}");
 
         if (hp <= 0)
         {
             Die();
+        }
+        else if (effect != null)
+        {
+            effect.PlayHitEffect(transform.position); // [동료분 추가] 살아남았을 때만 피격 이펙트
         }
     }
 
@@ -295,8 +302,12 @@ public class Enemy : MonoBehaviour
         if (dead) return;
         dead = true;
 
-        SoundManager.Play(SoundManager.Sfx.EnemyDeath); // [사운드 연동] 일반 적 사망 전용 사운드
+        SoundManager.Play(SoundManager.Sfx.EnemyHit); // Hit -> EnemyHit 으로 변경
+
+        if (effect != null) effect.PlayDeathEffect(); // [동료분 추가] 사망 이펙트
+
         KillCount++;
+        StageMoney += money; // 스테이지 클리어 보상 표시용 누적
 
         if (DataManager.Instance != null)
         {
@@ -304,6 +315,7 @@ public class Enemy : MonoBehaviour
             DataManager.Instance.money += money;
         }
 
+        // [아이템 드랍 로직] 1순위: 고급 아이템 확률 검사 -> 2순위: 일반 아이템 확률 검사
         float roll = Random.value;
         if (rareItemPrefab != null && roll <= rareDropChance)
         {
