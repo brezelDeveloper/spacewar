@@ -76,6 +76,20 @@ public class Enemy : MonoBehaviour
     [SerializeField, Range(0f, 1f)] private float normalDropChance = 0.35f; // 일반 아이템 드랍 확률 (35%)
     [SerializeField, Range(0f, 1f)] private float rareDropChance = 0.10f;   // 고급 아이템 드랍 확률 (10%)
 
+    [Header("HP 바 (적 프리팹 안에 직접 만든 그림 연결)")]
+    [Tooltip("HPBack·HPFill을 묶은 부모. 적이 돌아도 바는 돌지 않고 늘 아래에 있음")]
+    [SerializeField] private Transform hpBarRoot;
+    [Tooltip("HP만큼 줄어드는 쪽 그림 (가운데 기준 Square 그림)")]
+    [SerializeField] private SpriteRenderer hpBarFill;
+    [Tooltip("적 중심에서 바까지 거리. Y가 음수면 아래쪽")]
+    [SerializeField] private Vector2 hpBarOffset = new Vector2(0f, -0.7f);
+    [Tooltip("켜면 HP가 가득일 때는 바를 숨김")]
+    [SerializeField] private bool hideHpBarWhenFull = false;
+    [SerializeField] private Color hpBarColor = new Color(0.3f, 0.9f, 0.4f);
+    [SerializeField] private Color hpBarLowColor = new Color(1f, 0.3f, 0.3f);
+    [Tooltip("HP가 이 비율 이하면 경고 색")]
+    [SerializeField, Range(0f, 1f)] private float hpBarLowRatio = 0.4f;
+
     [Header("화면 밖으로 밀려났을 때")]
     [SerializeField] private float returnSpeed = 6f;
 
@@ -97,6 +111,8 @@ public class Enemy : MonoBehaviour
     private bool chasing = true;
     private bool entered;
     private bool dead;
+    private Vector3 fillFullScale;
+    private Vector3 fillFullPos;
 
     void Awake()
     {
@@ -106,6 +122,14 @@ public class Enemy : MonoBehaviour
         hp = maxHp;
         fireTimer = Random.Range(0.5f, fireInterval);
         orbitDir = Random.value < 0.5f ? 1f : -1f;
+
+        if (hpBarFill != null)
+        {
+            fillFullScale = hpBarFill.transform.localScale;
+            fillFullPos = hpBarFill.transform.localPosition;
+        }
+
+        UpdateHpBar();
     }
 
     void FixedUpdate()
@@ -273,6 +297,35 @@ public class Enemy : MonoBehaviour
         }
     }
 
+    void LateUpdate()
+    {
+        if (hpBarRoot == null) return;
+
+        hpBarRoot.rotation = Quaternion.identity;
+        hpBarRoot.position = transform.position + (Vector3)hpBarOffset;
+    }
+
+    void UpdateHpBar()
+    {
+        float ratio = Mathf.Clamp01((float)hp / Mathf.Max(maxHp, 1));
+
+        if (hpBarRoot != null)
+        {
+            bool show = !(hideHpBarWhenFull && ratio >= 1f);
+            if (hpBarRoot.gameObject.activeSelf != show) hpBarRoot.gameObject.SetActive(show);
+        }
+
+        if (hpBarFill == null) return;
+
+        float spriteWidth = hpBarFill.sprite != null ? hpBarFill.sprite.bounds.size.x : 1f;
+        float fullWidth = spriteWidth * fillFullScale.x;
+
+        Transform fill = hpBarFill.transform;
+        fill.localScale = new Vector3(fillFullScale.x * ratio, fillFullScale.y, fillFullScale.z);
+        fill.localPosition = fillFullPos - new Vector3(fullWidth * (1f - ratio) * 0.5f, 0f, 0f);
+        hpBarFill.color = ratio <= hpBarLowRatio ? hpBarLowColor : hpBarColor;
+    }
+
     public void ApplyKnockback(Vector2 dir, float distance, float duration)
     {
         rb.linearVelocity = dir.normalized * (distance / duration);
@@ -284,6 +337,7 @@ public class Enemy : MonoBehaviour
         if (dead) return;
 
         hp -= amount;
+        UpdateHpBar();
         SoundManager.Play(SoundManager.Sfx.EnemyHit); // Hit -> EnemyHit 으로 변경
         Debug.Log($"{name} HP {Mathf.Max(hp, 0)}/{maxHp}");
 
@@ -302,7 +356,7 @@ public class Enemy : MonoBehaviour
         if (dead) return;
         dead = true;
 
-        SoundManager.Play(SoundManager.Sfx.EnemyHit); // Hit -> EnemyHit 으로 변경
+        SoundManager.Play(SoundManager.Sfx.EnemyDeath);
 
         if (effect != null) effect.PlayDeathEffect(); // [동료분 추가] 사망 이펙트
 
@@ -312,7 +366,6 @@ public class Enemy : MonoBehaviour
         if (DataManager.Instance != null)
         {
             DataManager.Instance.currentScore += score;
-            DataManager.Instance.money += money;
         }
 
         // [아이템 드랍 로직] 1순위: 고급 아이템 확률 검사 -> 2순위: 일반 아이템 확률 검사

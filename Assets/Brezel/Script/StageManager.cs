@@ -51,11 +51,18 @@ public class StageManager : MonoBehaviour
     private static int savedStage;
     private static bool timing;
     private static bool skipRequested;
+    private static bool bossRequested;
 
     public static void SkipStage()
     {
         skipRequested = true;
         SoundManager.Play(SoundManager.Sfx.CheatSkipStage); // [사운드 연동] 스테이지 스킵 치트 사운드
+    }
+
+    public static void SkipToBoss()
+    {
+        bossRequested = true;
+        SoundManager.Play(SoundManager.Sfx.CheatSkipStage);
     }
 
     private Camera cam;
@@ -96,6 +103,7 @@ public class StageManager : MonoBehaviour
         }
 
         StageIndex = 0;
+        SoundManager.Play(SoundManager.Sfx.GameClear);
         yield return ShowMessage("VICTORY", endDelay);
 
         if (GameSystemExtension.Instance != null)
@@ -128,15 +136,17 @@ public class StageManager : MonoBehaviour
         BossPhase = false;
         StageTime = 0f;
         timing = false;
+        bossRequested = false;
         SetBackground(stage.background);
 
         SoundManager.PlayStageBGM(); // [사운드 연동] 보스전 후 다음 스테이지 시작 시 스테이지 BGM 복구
 
+        SoundManager.Play(SoundManager.Sfx.StageStart);
         yield return ShowMessage($"STAGE {number}\n{stage.title}", messageTime);
 
         timing = true;
 
-        while (Enemy.KillCount < stage.killsForBoss && !skipRequested)
+        while (Enemy.KillCount < stage.killsForBoss && !skipRequested && !bossRequested)
         {
             if (stage.enemies.Length > 0 && CountEnemies() < stage.maxEnemies)
             {
@@ -148,16 +158,19 @@ public class StageManager : MonoBehaviour
                 }
             }
 
-            for (float t = 0f; t < stage.spawnInterval && !skipRequested; t += Time.deltaTime)
+            for (float t = 0f; t < stage.spawnInterval && !skipRequested && !bossRequested; t += Time.deltaTime)
             {
                 if (Enemy.KillCount >= stage.killsForBoss) break;
                 yield return null;
             }
         }
 
+        bossRequested = false;
+
         if (stage.boss != null && !skipRequested)
         {
             BossPhase = true;
+            SoundManager.Play(SoundManager.Sfx.Warning);
             yield return ShowMessage("WARNING", messageTime);
 
             Boss boss = Instantiate(stage.boss, SpawnPoint(), Quaternion.identity);

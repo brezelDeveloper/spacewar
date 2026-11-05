@@ -45,16 +45,19 @@ public class HitFeedbackManager : MonoBehaviour
     #endregion
 
     #region 2. 히트스탑 (Hitstop)
+    private const float HitstopScale = 0.05f;
+
     public void TriggerHitstop(float duration = 0.08f)
     {
+        if (Time.timeScale < 1f) return;
         StartCoroutine(HitstopCoroutine(duration));
     }
 
     private IEnumerator HitstopCoroutine(float duration)
     {
-        Time.timeScale = 0.05f;
+        Time.timeScale = HitstopScale;
         yield return new WaitForSecondsRealtime(duration);
-        Time.timeScale = 1f;
+        if (Time.timeScale == HitstopScale) Time.timeScale = 1f;
     }
     #endregion
 

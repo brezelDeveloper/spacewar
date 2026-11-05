@@ -14,6 +14,7 @@ public class Boss : MonoBehaviour
     }
 
     public static event System.Action Defeated;
+    public static Boss Active { get; private set; }
 
     [Header("능력치")]
     [SerializeField] private int maxHp = 8;
@@ -115,6 +116,7 @@ public class Boss : MonoBehaviour
 
     void Awake()
     {
+        Active = this;
         rb = GetComponent<Rigidbody2D>();
         effect = GetComponent<BossEffect>(); // [동료분 추가] 같은 오브젝트의 BossEffect 가져오기
         cam = Camera.main;
@@ -436,6 +438,11 @@ public class Boss : MonoBehaviour
         Defeated?.Invoke();
         Destroy(gameObject);
 
-        SoundManager.Play(SoundManager.Sfx.BossHit); // Hit -> BossHit 으로 변경
+        SoundManager.Play(SoundManager.Sfx.BossDeath);
+    }
+
+    void OnDestroy()
+    {
+        if (Active == this) Active = null;
     }
 }

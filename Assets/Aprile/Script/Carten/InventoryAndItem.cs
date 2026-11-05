@@ -48,8 +48,7 @@ public class InventoryAndItem : MonoBehaviour
     {
         if (type == DropItemType.Money)
         {
-            if (DataManager.Instance != null)
-                DataManager.Instance.money += Mathf.RoundToInt(value);
+            Enemy.StageMoney += Mathf.RoundToInt(value);
             return true;
         }
 

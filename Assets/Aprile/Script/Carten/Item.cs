@@ -20,6 +20,16 @@ public class Item : MonoBehaviour
     public float blackHoleRadius = 6f;
     public float blackHoleDuration = 3f;
 
+    public float Remaining(PartType skill)
+    {
+        return cooldownEnd.TryGetValue(skill, out float end) ? Mathf.Max(0f, end - Time.time) : 0f;
+    }
+
+    public float CooldownRatio(PartType skill)
+    {
+        return skillCooldown > 0f ? Remaining(skill) / skillCooldown : 0f;
+    }
+
     // 퀵슬롯 스킬 실행 (Player.cs에서 호출)
     public bool ExecuteSkill(PartType skill)
     {
@@ -56,12 +66,7 @@ public class Item : MonoBehaviour
     // 1. 강제 유도: 화면 내 적 투사체들을 가장 가까운 적에게 방향 전환
     private bool ExecuteForcedGuidance()
     {
-        Enemy[] enemies = FindObjectsByType<Enemy>(FindObjectsSortMode.None);
-        Boss boss = FindFirstObjectByType<Boss>();
-
-        Transform targetTransform = null;
-        if (boss != null) targetTransform = boss.transform;
-        else if (enemies.Length > 0) targetTransform = enemies[0].transform;
+        Transform targetTransform = FindFacingEnemy();
 
         if (targetTransform == null) return false;
 
@@ -79,6 +84,27 @@ public class Item : MonoBehaviour
             }
         }
         return true;
+    }
+
+    private Transform FindFacingEnemy()
+    {
+        Transform best = null;
+        float bestScore = float.MinValue;
+
+        foreach (Enemy enemy in FindObjectsByType<Enemy>(FindObjectsSortMode.None))
+        {
+            Vector2 to = enemy.transform.position - transform.position;
+            float dist = Mathf.Max(to.magnitude, 0.01f);
+            float score = Vector2.Dot(transform.up, to / dist) * 10f - dist;
+
+            if (score > bestScore)
+            {
+                bestScore = score;
+                best = enemy.transform;
+            }
+        }
+
+        return best;
     }
 
     // 2. 시간 정지: 일정 시간 동안 적의 투사체 속도를 0으로 고정

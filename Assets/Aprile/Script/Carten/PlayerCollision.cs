@@ -3,36 +3,43 @@ using UnityEngine;
 public class PlayerCollision : MonoBehaviour
 {
     [Header("충돌 이펙트 리소스")]
-    [SerializeField] private GameObject hitVfxPrefab;   // 피격 파티클 프리팹
-    [SerializeField] private Material whiteFlashMaterial; // 흰색 피격 하이라이트 셰이더 머티리얼
+    [SerializeField] private GameObject hitVfxPrefab;
+    [SerializeField] private Material whiteFlashMaterial;
+
+    [Header("연출 간격")]
+    [Tooltip("연출이 너무 자주 터지지 않도록 다음 연출까지 기다리는 시간(초)")]
+    [SerializeField] private float feedbackCooldown = 0.3f;
 
     private SpriteRenderer spriteRenderer;
+    private float nextFeedbackTime;
 
     private void Awake()
     {
         spriteRenderer = GetComponentInChildren<SpriteRenderer>();
     }
 
-    private void OnCollisionEnter2D(Collision2D collision)
+    private void OnTriggerEnter2D(Collider2D other)
     {
-        if (collision.gameObject.CompareTag("Boss") || collision.gameObject.CompareTag("Enemy"))
-        {
-            ContactPoint2D contact = collision.GetContact(0);
-            Vector2 hitPoint = contact.point;
-            Quaternion hitRotation = Quaternion.FromToRotation(Vector3.up, contact.normal);
+        if (Time.time < nextFeedbackTime) return;
 
-            if (HitFeedbackManager.Instance != null)
-            {
-                // 1. 타격 파티클 이펙트 생성 (접촉 지점에 생성)
-                HitFeedbackManager.Instance.SpawnHitVFX(hitVfxPrefab, hitPoint, hitRotation);
+        bool isBoss = other.GetComponentInParent<Boss>() != null;
+        bool isEnemy = other.GetComponentInParent<Enemy>() != null;
+        if (!isBoss && !isEnemy) return;
 
-                // 2. 화면 흔들림 및 순간 멈춤 적용
-                HitFeedbackManager.Instance.ShakeCamera(0.25f, 0.4f);
-                HitFeedbackManager.Instance.TriggerHitstop(0.06f);
+        HitFeedbackManager feedback = HitFeedbackManager.Instance;
+        if (feedback == null) return;
 
-                // 3. 스프라이트 흰색 섬광 연출 (0.05초간 하얗게 빛남)
-                HitFeedbackManager.Instance.TriggerHitFlash(spriteRenderer, whiteFlashMaterial, 0.05f);
-            }
-        }
+        nextFeedbackTime = Time.time + feedbackCooldown;
+
+        Vector2 hitPoint = other.ClosestPoint(transform.position);
+        Vector2 normal = (Vector2)transform.position - hitPoint;
+        Quaternion hitRotation = normal.sqrMagnitude > 0.0001f
+            ? Quaternion.FromToRotation(Vector3.up, normal)
+            : Quaternion.identity;
+
+        feedback.SpawnHitVFX(hitVfxPrefab, hitPoint, hitRotation);
+        feedback.ShakeCamera(0.25f, 0.4f);
+        feedback.TriggerHitstop(0.06f);
+        feedback.TriggerHitFlash(spriteRenderer, whiteFlashMaterial, 0.05f);
     }
 }

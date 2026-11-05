@@ -11,6 +11,8 @@ public class CheatManager : MonoBehaviour
     [SerializeField] private KeyCode killEnemiesKey = KeyCode.F3;
     [SerializeField] private KeyCode addMoneyKey = KeyCode.F4;
     [SerializeField] private KeyCode skipStageKey = KeyCode.F5;
+    [Tooltip("F6은 GameSystemExtension의 데이터 초기화가 사용 중")]
+    [SerializeField] private KeyCode bossKey = KeyCode.F7;
 
     [Header("강제 적 사망")]
     [Tooltip("화면 안의 적·보스에게 주는 데미지")]
@@ -62,6 +64,7 @@ public class CheatManager : MonoBehaviour
         if (Input.GetKeyDown(killEnemiesKey)) KillEnemiesOnScreen();
         if (Input.GetKeyDown(addMoneyKey)) AddMoney();
         if (Input.GetKeyDown(skipStageKey)) SkipStage();
+        if (Input.GetKeyDown(bossKey)) SkipToBoss();
     }
 
     private void LateUpdate()
@@ -76,6 +79,12 @@ public class CheatManager : MonoBehaviour
     {
         StageManager.SkipStage(); // StageManager 내부에서 CheatSkipStage 효과음 재생
         Debug.Log("[치트] 스테이지 넘기기");
+    }
+
+    private void SkipToBoss()
+    {
+        StageManager.SkipToBoss();
+        Debug.Log("[치트] 보스전으로 바로 이동");
     }
 
     private Player GetPlayer()
@@ -286,8 +295,8 @@ public class CheatManager : MonoBehaviour
 
         GUI.Label(new Rect(10, Screen.height - 50, 500, 24),
             $"[{debugModeKey}] 디버그: {(debugMode ? "ON" : "OFF")}   [{invincibleKey}] 무적: {(invincible ? "ON" : "OFF")}");
-        GUI.Label(new Rect(10, Screen.height - 30, 500, 24),
-            $"[{killEnemiesKey}] 화면 적 즉사   [{addMoneyKey}] 돈 +{moneyAmount}   [{skipStageKey}] 스테이지 넘기기");
+        GUI.Label(new Rect(10, Screen.height - 30, 800, 24),
+            $"[{killEnemiesKey}] 화면 적 즉사   [{addMoneyKey}] 돈 +{moneyAmount}   [{skipStageKey}] 스테이지 넘기기   [F6] 데이터 초기화   [{bossKey}] 보스전");
     }
 
     private void OnDestroy()

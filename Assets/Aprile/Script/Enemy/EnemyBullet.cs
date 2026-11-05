@@ -71,7 +71,7 @@ public class EnemyBullet : MonoBehaviour
 
     void FixedUpdate()
     {
-        if (exploding || isOverriddenBySkill) return;
+        if (exploding) return;
 
         age += Time.fixedDeltaTime;
 
@@ -81,6 +81,8 @@ public class EnemyBullet : MonoBehaviour
             else Destroy(gameObject);
             return;
         }
+
+        if (isOverriddenBySkill) return;
 
         if (homing && age < settings.homingTime && target != null && target.gameObject.activeInHierarchy)
         {

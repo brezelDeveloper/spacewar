@@ -4,14 +4,53 @@ using UnityEngine.UI;
 
 public class HUD : MonoBehaviour
 {
+    [System.Serializable]
+    public class CooldownSlot
+    {
+        [Tooltip("이 칸 전체 묶음. 아이템 칸은 퀵슬롯이 비면 자동으로 꺼짐")]
+        public GameObject root;
+        [Tooltip("폭탄·아이템 그림")]
+        public Image icon;
+        [Tooltip("그림 위를 덮는 어두운 이미지. 쿨타임이 줄어드는 만큼 시계처럼 사라짐")]
+        public Image cover;
+        [Tooltip("남은 초 숫자")]
+        public TMP_Text timeText;
+    }
+
+    [System.Serializable]
+    public class PartIcon
+    {
+        public PartType type;
+        public Sprite icon;
+    }
+
     [Header("플레이어")]
     [Tooltip("HP 바 (채워지는 쪽 이미지). Pivot X를 0으로 두면 왼쪽부터 줄어듦")]
     [SerializeField] private Image hpBar;
     [SerializeField] private TMP_Text hpText;
+    [Tooltip("(선택) 폭탄 상태 글자. 쿨타임 칸을 쓰면 비워도 됨")]
     [SerializeField] private TMP_Text bombText;
 
-    [Header("폭탄 UI (쿨타임 게이지)")] // 새로 추가한 인스펙터 속성
+    [Header("폭탄 UI (쿨타임 게이지)")]
+    [Tooltip("(선택) 쿨타임이 찰수록 늘어나는 게이지")]
     [SerializeField] private Image bombGaugeFill;
+
+    [Header("쿨타임 칸 (직접 만든 UI 연결)")]
+    [SerializeField] private CooldownSlot bombSlot = new CooldownSlot();
+    [Tooltip("위에서부터 퀵슬롯 1번, 2번")]
+    [SerializeField] private CooldownSlot[] skillSlots = { new CooldownSlot(), new CooldownSlot() };
+    [Tooltip("파츠 종류별 아이콘 그림")]
+    [SerializeField]
+    private PartIcon[] partIcons =
+    {
+        new PartIcon { type = PartType.ForceHoming },
+        new PartIcon { type = PartType.TimeStop },
+        new PartIcon { type = PartType.Reflect },
+        new PartIcon { type = PartType.BlackHole },
+        new PartIcon { type = PartType.SlowField }
+    };
+    [SerializeField] private Color iconReadyColor = Color.white;
+    [SerializeField] private Color iconCoolingColor = new Color(0.55f, 0.55f, 0.55f);
 
     [Header("기록")]
     [SerializeField] private TMP_Text stageText;
@@ -35,32 +74,54 @@ public class HUD : MonoBehaviour
     [SerializeField] private Color bombEmptyColor = new Color(1f, 1f, 1f, 0.3f);
 
     private Player player;
+    private Item item;
     private Boss boss;
     private float bossSearchTimer;
 
     void Start()
     {
         if (bossGroup != null) bossGroup.SetActive(false);
+
+        CheckSlot(bombSlot, "Bomb Slot");
+        PrepareCover(bombSlot);
+
+        for (int i = 0; i < skillSlots.Length; i++)
+        {
+            CheckSlot(skillSlots[i], $"Skill Slots {i}");
+            PrepareCover(skillSlots[i]);
+        }
     }
 
     void Update()
     {
         UpdatePlayer();
+        UpdateCooldowns();
         UpdateRecord();
         UpdateBoss();
     }
 
+    void CheckSlot(CooldownSlot slot, string label)
+    {
+        if (slot.icon == null) Debug.LogWarning($"[HUD] {label} → Icon 칸이 비어 있어요.");
+        if (slot.cover == null) Debug.LogWarning($"[HUD] {label} → Cover 칸이 비어 있어요.");
+        if (slot.timeText == null) Debug.LogWarning($"[HUD] {label} → Time Text 칸이 비어 있어요.");
+        if (label == "Bomb Slot" && slot.icon != null && slot.icon.sprite == null)
+            Debug.LogWarning("[HUD] 폭탄 Icon에 그림(Source Image)이 없어요.");
+    }
+
     void UpdatePlayer()
     {
-        if (player == null) player = FindAnyObjectByType<Player>();
+        if (player == null)
+        {
+            player = FindAnyObjectByType<Player>();
+            if (player != null) item = player.GetComponent<Item>();
+        }
         if (player == null) return;
 
-        // HP 갱신
         SetBar(hpBar, player.HpRatio);
         if (hpBar != null) hpBar.color = player.HpRatio <= lowHpRatio ? hpLowColor : hpColor;
         SetText(hpText, $"HP {player.CurrentHp}/{player.MaxHp}");
 
-        // 폭탄 텍스트 및 게이지 갱신 (쿨타임 방식)
         if (bombText != null)
         {
             if (player.IsBombReady)
@@ -70,18 +131,85 @@ public class HUD : MonoBehaviour
             }
             else
             {
-                // 남은 시간 초 단위로 올림하여 표시
-                int remainSec = Mathf.CeilToInt(player.BombCooldownRatio * 10f);
-                SetText(bombText, $"폭탄 [Q] {remainSec}초");
+                SetText(bombText, $"폭탄 [Q] {Mathf.CeilToInt(player.BombRemaining)}초");
                 bombText.color = bombEmptyColor;
             }
         }
 
-        // 폭탄 게이지 이미지 갱신 (필요시)
         if (bombGaugeFill != null)
         {
             bombGaugeFill.fillAmount = 1f - player.BombCooldownRatio;
         }
+    }
+
+    void UpdateCooldowns()
+    {
+        if (player == null) return;
+
+        SetCooldown(bombSlot, player.BombRemaining, player.BombCooldownRatio);
+
+        DataManager data = DataManager.Instance;
+
+        for (int i = 0; i < skillSlots.Length; i++)
+        {
+            CooldownSlot slot = skillSlots[i];
+            PartType type = data != null && i < data.quickSlots.Length ? data.quickSlots[i] : PartType.None;
+            bool show = type != PartType.None;
+
+            if (slot.root != null && slot.root.activeSelf != show) slot.root.SetActive(show);
+            if (!show) continue;
+
+            SetIcon(slot, IconOf(type));
+
+            float remain = item != null ? item.Remaining(type) : 0f;
+            float ratio = item != null ? item.CooldownRatio(type) : 0f;
+            SetCooldown(slot, remain, ratio);
+        }
+    }
+
+    Sprite IconOf(PartType type)
+    {
+        foreach (PartIcon p in partIcons)
+        {
+            if (p.type == type) return p.icon;
+        }
+
+        return null;
+    }
+
+    void SetIcon(CooldownSlot slot, Sprite sprite)
+    {
+        if (slot.icon == null || sprite == null || slot.icon.sprite == sprite) return;
+
+        slot.icon.sprite = sprite;
+        PrepareCover(slot);
+    }
+
+    void PrepareCover(CooldownSlot slot)
+    {
+        if (slot.cover == null) return;
+
+        if (slot.icon != null)
+        {
+            slot.cover.sprite = slot.icon.sprite;
+            slot.cover.preserveAspect = slot.icon.preserveAspect;
+        }
+
+        slot.cover.type = Image.Type.Filled;
+        slot.cover.fillMethod = Image.FillMethod.Radial360;
+        slot.cover.fillOrigin = (int)Image.Origin360.Top;
+        slot.cover.fillClockwise = false;
+        slot.cover.raycastTarget = false;
+        slot.cover.fillAmount = 0f;
+    }
+
+    void SetCooldown(CooldownSlot slot, float remain, float ratio)
+    {
+        bool cooling = remain > 0f;
+
+        if (slot.cover != null) slot.cover.fillAmount = Mathf.Clamp01(ratio);
+        if (slot.icon != null) slot.icon.color = cooling ? iconCoolingColor : iconReadyColor;
+        SetText(slot.timeText, cooling ? Mathf.CeilToInt(remain).ToString() : "");
     }
 
     void UpdateRecord()

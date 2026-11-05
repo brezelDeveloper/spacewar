@@ -690,6 +690,7 @@ public class GameSystemExtension : MonoBehaviour
 
     public void OpenDeathMenu()
     {
+        SoundManager.Play(SoundManager.Sfx.GameOver);
         isDeathOpen = true;
         isPaused = false;
         CloseAllModals();
@@ -814,21 +815,20 @@ public class GameSystemExtension : MonoBehaviour
     {
         PlayerPrefs.DeleteKey(ValidSaveKey);
         PlayerPrefs.DeleteKey(SavedStageKey);
-        PlayerPrefs.DeleteKey("SaveStage");
-        PlayerPrefs.DeleteKey("SaveScore");
-        PlayerPrefs.DeleteKey("SaveMoney");
-        PlayerPrefs.DeleteKey("SaveOwnedParts");
-        PlayerPrefs.DeleteKey("SaveSlot0");
-        PlayerPrefs.DeleteKey("SaveSlot1");
+        PlayerPrefs.DeleteKey("SpaceShooter_SaveData");
         PlayerPrefs.Save();
 
-        if (DataManager.Instance != null && DataManager.Instance.rankList != null)
-        {
-            DataManager.Instance.rankList.Clear();
-            PlayerPrefs.DeleteKey("RankList");
-            PlayerPrefs.Save();
-        }
         if (continueBtn != null) continueBtn.gameObject.SetActive(false);
+    }
+
+    public void ClearAllData()
+    {
+        ClearSaveData();
+
+        if (DataManager.Instance != null) DataManager.Instance.rankList.Clear();
+        PlayerPrefs.DeleteKey("SpaceShooter_RankData");
+        PlayerPrefs.Save();
+
         Debug.Log("[치트 F6] 세이브 데이터 및 랭킹이 완전히 초기화되었습니다!");
     }
 
@@ -838,7 +838,7 @@ public class GameSystemExtension : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.F6))
         {
-            ClearSaveData();
+            ClearAllData();
             ResetDataForNewGame();
             SoundManager.Play(SoundManager.Sfx.CheatDebug); // [수정] 데이터 초기화 치트 사운드로 정밀화
         }

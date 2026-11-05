@@ -37,6 +37,10 @@ public class Player : MonoBehaviour
     [Tooltip("켜짐: 화면 밖으로 이만큼 나가야 반대쪽으로 넘어감 / 꺼짐: 화면 끝에서 안쪽으로 남길 여백")]
     [SerializeField] private float screenMargin = 0.5f;
 
+    [Header("보스전")]
+    [Tooltip("보스전 중 올라갈 수 있는 최대 높이 = 보스 중심 높이 - 이 값 (0 = 보스 중심 높이까지)")]
+    [SerializeField] private float bossCeilingGap = 0f;
+
     [Header("조작 키")]
     [SerializeField] private KeyCode slowKey = KeyCode.LeftShift;
     [SerializeField] private KeyCode bombKey = KeyCode.Q;
@@ -97,6 +101,7 @@ public class Player : MonoBehaviour
     // HUD 참조용 프로퍼티 (폭탄 쿨타임)
     public float BombCooldownRatio => Mathf.Clamp01(bombTimer / bombCooldown);
     public bool IsBombReady => bombTimer <= 0f;
+    public float BombRemaining => bombTimer;
 
     public bool IsDead => isDead;
     public bool IsInvincible => CheatInvincible || Time.time < invincibleUntil;
@@ -230,6 +235,12 @@ public class Player : MonoBehaviour
             newPos.y = Mathf.Clamp(newPos.y, min.y, max.y);
         }
 
+        if (Boss.Active != null)
+        {
+            float ceiling = Boss.Active.transform.position.y - bossCeilingGap;
+            if (newPos.y > ceiling) newPos.y = ceiling;
+        }
+
         transform.position = newPos;
     }
 
@@ -336,6 +347,7 @@ public class Player : MonoBehaviour
         }
         else if (restartOnDeath)
         {
+            SoundManager.Play(SoundManager.Sfx.GameOver);
             Invoke(nameof(Restart), restartDelay);
         }
     }

@@ -7,19 +7,21 @@ public class PlayerTrailEffect : MonoBehaviour
     [SerializeField] private float spawnInterval = 0.05f;
     [SerializeField] private float ghostLifetime = 0.3f;
     [SerializeField] private Color ghostColor = new Color(0f, 1f, 0.9f, 0.6f);
+    [Tooltip("한 간격 동안 이만큼 이상 움직였을 때만 잔상 생성")]
+    [SerializeField] private float minMove = 0.01f;
 
     private SpriteRenderer playerSprite;
-    private Rigidbody2D rb;
     private Coroutine trailCoroutine;
+    private Vector3 lastPos;
 
     private void Awake()
     {
         playerSprite = GetComponentInChildren<SpriteRenderer>();
-        rb = GetComponent<Rigidbody2D>();
     }
 
     private void OnEnable()
     {
+        lastPos = transform.position;
         trailCoroutine = StartCoroutine(GenerateTrail());
     }
 
@@ -33,15 +35,17 @@ public class PlayerTrailEffect : MonoBehaviour
     {
         while (true)
         {
-            if (rb != null && rb.linearVelocity.magnitude > 0.1f)
-            {
-                // 매니저를 통해 잔상 생성 요청
-                if (HitFeedbackManager.Instance != null)
-                {
-                    HitFeedbackManager.Instance.GenerateGhost(playerSprite, ghostColor, ghostLifetime);
-                }
-            }
             yield return new WaitForSeconds(spawnInterval);
+
+            float moved = (transform.position - lastPos).magnitude;
+            lastPos = transform.position;
+
+            if (moved < minMove || playerSprite == null || !playerSprite.enabled) continue;
+
+            if (HitFeedbackManager.Instance != null)
+            {
+                HitFeedbackManager.Instance.GenerateGhost(playerSprite, ghostColor, ghostLifetime);
+            }
         }
     }
 }

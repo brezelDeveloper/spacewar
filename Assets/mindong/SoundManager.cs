@@ -42,7 +42,12 @@ public class SoundManager : MonoBehaviour
         [InspectorName("치트 - 무적 모드 토글")] CheatInvincible = 41,
         [InspectorName("치트 - 화면 적/탄환 전멸")] CheatKillAll = 42,
         [InspectorName("치트 - 골드/재화 추가")] CheatAddMoney = 43,
-        [InspectorName("치트 - 스테이지 스킵")] CheatSkipStage = 44
+        [InspectorName("치트 - 스테이지 스킵")] CheatSkipStage = 44,
+
+        [InspectorName("진행 - 보스 등장 경고 (WARNING)")] Warning = 50,
+        [InspectorName("진행 - 스테이지 시작")] StageStart = 51,
+        [InspectorName("진행 - 게임오버")] GameOver = 52,
+        [InspectorName("진행 - 게임 클리어")] GameClear = 53
     }
 
     [System.Serializable]
@@ -50,7 +55,12 @@ public class SoundManager : MonoBehaviour
     {
         public Sfx type;
         public AudioClip clip;
+        [Tooltip("이 소리만의 크기 (0~1)")]
         [Range(0f, 1f)] public float volume = 1f;
+        [Tooltip("몇 초까지만 재생할지. 0 = 끝까지 재생")]
+        [Min(0f)] public float maxLength = 0f;
+        [Tooltip("잘릴 때 소리가 줄어드는 시간(초). 뚝 끊기는 느낌을 줄임")]
+        [Min(0f)] public float fadeOut = 0.05f;
     }
 
     public static SoundManager Instance { get; private set; }
@@ -102,11 +112,24 @@ public class SoundManager : MonoBehaviour
         new SfxEntry { type = Sfx.CheatInvincible },
         new SfxEntry { type = Sfx.CheatKillAll },
         new SfxEntry { type = Sfx.CheatAddMoney },
-        new SfxEntry { type = Sfx.CheatSkipStage }
+        new SfxEntry { type = Sfx.CheatSkipStage },
+
+        new SfxEntry { type = Sfx.Warning },
+        new SfxEntry { type = Sfx.StageStart },
+        new SfxEntry { type = Sfx.GameOver },
+        new SfxEntry { type = Sfx.GameClear }
     };
 
     [Header("전체 효과음 음량")]
     [SerializeField, Range(0f, 1f)] private float masterVolume = 1f;
+
+    [Header("길이를 자르는 효과음")]
+    [Tooltip("Max Length를 쓴 소리가 동시에 몇 개까지 날 수 있는지")]
+    [SerializeField, Min(1)] private int cutVoices = 6;
+
+    private AudioSource[] cutSources;
+    private int[] cutTokens;
+    private int nextCut;
 
     private AudioSource sfxSource;
     private AudioSource bgmSource;
@@ -145,6 +168,14 @@ public class SoundManager : MonoBehaviour
         bgmSource.playOnAwake = false;
         bgmSource.loop = true;
         bgmSource.volume = bgmVolume;
+
+        cutSources = new AudioSource[cutVoices];
+        cutTokens = new int[cutVoices];
+        for (int i = 0; i < cutVoices; i++)
+        {
+            cutSources[i] = gameObject.AddComponent<AudioSource>();
+            cutSources[i].playOnAwake = false;
+        }
 
         SceneManager.sceneLoaded += OnSceneLoaded;
     }
@@ -212,10 +243,60 @@ public class SoundManager : MonoBehaviour
         {
             if (entry.type == type && entry.clip != null)
             {
-                sfxSource.PlayOneShot(entry.clip, entry.volume * masterVolume);
+                float volume = entry.volume * masterVolume;
+
+                if (entry.maxLength > 0f && entry.maxLength < entry.clip.length) PlayCut(entry, volume);
+                else sfxSource.PlayOneShot(entry.clip, volume);
                 return;
             }
         }
+    }
+
+    private void PlayCut(SfxEntry entry, float volume)
+    {
+        if (cutSources == null || cutSources.Length == 0) return;
+
+        int index = -1;
+        for (int i = 0; i < cutSources.Length; i++)
+        {
+            if (!cutSources[i].isPlaying)
+            {
+                index = i;
+                break;
+            }
+        }
+
+        if (index < 0)
+        {
+            index = nextCut;
+            nextCut = (nextCut + 1) % cutSources.Length;
+        }
+
+        AudioSource source = cutSources[index];
+        source.Stop();
+        source.clip = entry.clip;
+        source.volume = volume;
+        source.Play();
+
+        int token = ++cutTokens[index];
+        StartCoroutine(StopAfter(index, token, entry.maxLength, entry.fadeOut, volume));
+    }
+
+    private System.Collections.IEnumerator StopAfter(int index, int token, float length, float fade, float volume)
+    {
+        AudioSource source = cutSources[index];
+        fade = Mathf.Min(fade, length);
+
+        yield return new WaitForSecondsRealtime(length - fade);
+
+        for (float t = 0f; t < fade; t += Time.unscaledDeltaTime)
+        {
+            if (cutTokens[index] != token) yield break;
+            source.volume = volume * (1f - t / fade);
+            yield return null;
+        }
+
+        if (cutTokens[index] == token) source.Stop();
     }
 
     // ---------------- 편의 헬퍼 1: 파츠 종류 번호(1~5)로 사운드 자동 분기 ----------------
