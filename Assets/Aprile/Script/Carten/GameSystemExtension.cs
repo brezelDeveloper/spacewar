@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Text;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -10,6 +11,13 @@ public class GameSystemExtension : MonoBehaviour
 
     private const string ValidSaveKey = "SpaceWar_ValidSave";
     private const string SavedStageKey = "SpaceWar_SavedStage";
+    private const string ShipColorIndexKey = "SpaceWar_ShipColor";
+
+    [Header("★ UI 에셋 스킨 연결 (Demo 씬의 GUISkin 연결!) ★")]
+    [Tooltip("에셋 폴더에서 .guiskin 파일을 찾아 여기에 넣으면 모든 코드 UI가 에셋 디자인으로 바뀝니다!")]
+    public GUISkin customGuiSkin;
+    [Tooltip("글자가 안 보일 때를 대비한 한글 폰트 (.ttf / .otf)")]
+    public Font customKoreanFont;
 
     [Header("2~3스테이지 장애물(운석) 스폰")]
     public GameObject obstaclePrefab;
@@ -21,14 +29,6 @@ public class GameSystemExtension : MonoBehaviour
     public bool enableDarkVision = true;
     public float visionSize = 7f;
 
-    [Header("시작 인트로 및 종료 아웃트로 설정")]
-    [Tooltip("게임 시작 시 화면이 밝아지는 시간(초)")]
-    public float introFadeTime = 1.5f;
-    [Tooltip("게임 종료(메인메뉴 아웃트로) 시 어두워지는 시간(초)")]
-    public float outroFadeTime = 1.0f;
-    private float currentFadeAlpha = 1f;
-    private bool isIntroPlaying = true;
-
     public bool IsEndingProcessDone { get; private set; } = false;
 
     private Canvas darkCanvas;
@@ -38,6 +38,7 @@ public class GameSystemExtension : MonoBehaviour
 
     private bool showRankWindow = false;
     private bool showHelpWindow = false;
+    private bool showMenuSettings = false;
     private bool showEndingRankInput = false;
     private bool showEndingMessage = false;
     private bool showDeathMenu = false;
@@ -45,6 +46,68 @@ public class GameSystemExtension : MonoBehaviour
     private bool showSettingsInPause = false;
 
     private string inputPlayerId = "";
+
+    // [추가 기능 1] 기체(우주선) 도색 컬러 프리셋 5종
+    private readonly Color[] shipColors = new Color[]
+    {
+        new Color(0f, 1f, 0.87f, 1f),    // 0: 기본 네온 민트
+        new Color(1f, 1f, 1f, 1f),       // 1: 오리지널 화이트
+        new Color(1f, 0.35f, 0.35f, 1f), // 2: 크림슨 레드
+        new Color(1f, 0.85f, 0.2f, 1f),  // 3: 골드 옐로우
+        new Color(0.7f, 0.4f, 1f, 1f)    // 4: 네뷸라 퍼플
+    };
+    private readonly string[] shipColorNames = { "네온 민트", "오리지널", "크림슨 레드", "골드 옐로우", "네뷸라 퍼플" };
+    private int currentColorIndex = 0;
+
+    // =========================================================================
+    // [승후 님 구현 유지] 랭킹 아이디 욕설 검열 시스템
+    // - 비교 전에 소문자화 + 공백/숫자/특수문자 제거 → 우회 입력도 완벽 차단
+    // =========================================================================
+    private string rankInputWarning = "";
+
+    private static readonly string[] BadWords =
+    {
+        // 한글
+        "씨발", "시발", "씨바", "씨빨", "시빨", "씨팔", "시팔", "십팔", "ㅅㅂ", "ㅆㅂ", "ㅅㅃ",
+        "병신", "븅신", "빙신", "ㅂㅅ", "ㅄ",
+        "좆", "존나", "졸라", "ㅈㄴ",
+        "개새", "새끼", "섀끼", "ㅅㄲ",
+        "미친놈", "미친년", "미친새", "ㅁㅊ",
+        "지랄", "ㅈㄹ", "닥쳐", "꺼져",
+        "엠창", "느금", "니애미", "니미", "애미", "애비", "창녀",
+        // 영문 자판으로 친 한글 욕 (예: tlqkf = 시발)
+        "tlqkf", "qudtls", "whssk",
+        // 영어
+        "fuck", "fck", "fuk", "shit", "bitch", "dick", "pussy", "asshole", "bastard"
+    };
+
+    private static string NormalizeForFilter(string s)
+    {
+        if (string.IsNullOrEmpty(s)) return "";
+        StringBuilder sb = new StringBuilder(s.Length);
+        foreach (char c in s.ToLowerInvariant())
+        {
+            if (char.IsLetter(c)) sb.Append(c);
+        }
+        return sb.ToString();
+    }
+
+    public static bool ContainsBadWord(string name)
+    {
+        string normalized = NormalizeForFilter(name);
+        if (normalized.Length == 0) return false;
+
+        foreach (string word in BadWords)
+        {
+            if (normalized.Contains(word)) return true;
+        }
+        return false;
+    }
+
+    private static string MaskBadName(string name)
+    {
+        return ContainsBadWord(name) ? "***" : name;
+    }
 
     private void Awake()
     {
@@ -56,6 +119,7 @@ public class GameSystemExtension : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
+        currentColorIndex = PlayerPrefs.GetInt(ShipColorIndexKey, 0);
         SceneManager.sceneLoaded += OnSceneLoaded;
     }
 
@@ -73,22 +137,21 @@ public class GameSystemExtension : MonoBehaviour
     {
         showRankWindow = false;
         showHelpWindow = false;
+        showMenuSettings = false;
         showEndingRankInput = false;
         showEndingMessage = false;
         showDeathMenu = false;
         isPaused = false;
         showSettingsInPause = false;
+        rankInputWarning = "";
         Time.timeScale = 1f;
+
+        // 씬 내의 모든 UI Button에 클릭 효과음 자동 연결
+        AttachClickSoundToAllButtons();
 
         if (sceneName == "MainMenu")
         {
             if (darkCanvas != null) darkCanvas.gameObject.SetActive(false);
-
-            // 시작 인트로 페이드인 시작
-            isIntroPlaying = true;
-            currentFadeAlpha = 1f;
-            StopAllCoroutines();
-            StartCoroutine(PlayIntroFade());
 
             GameObject startBtnObj = GameObject.Find("StartButton");
             if (startBtnObj != null && startBtnObj.TryGetComponent(out Button startBtn))
@@ -96,26 +159,49 @@ public class GameSystemExtension : MonoBehaviour
                 startBtn.onClick.RemoveListener(StartNewGameFromMenu);
                 startBtn.onClick.AddListener(StartNewGameFromMenu);
             }
+
+            ApplyShipColorInMenu();
         }
         else if (sceneName == "TeamProject")
         {
             FixMessageTextKoreanFont();
             CreateDarknessUI();
+            ApplyShipColorInGame();
         }
     }
 
-    // 게임 시작 시 점차 화면이 밝아지는 인트로 연출
-    private IEnumerator PlayIntroFade()
+    private void AttachClickSoundToAllButtons()
     {
-        float timer = 0f;
-        while (timer < introFadeTime)
+        foreach (Button btn in FindObjectsByType<Button>(FindObjectsInactive.Include, FindObjectsSortMode.None))
         {
-            timer += Time.deltaTime;
-            currentFadeAlpha = Mathf.Lerp(1f, 0f, timer / introFadeTime);
-            yield return null;
+            btn.onClick.RemoveListener(PlayButtonClickSfx);
+            btn.onClick.AddListener(PlayButtonClickSfx);
         }
-        currentFadeAlpha = 0f;
-        isIntroPlaying = false;
+    }
+
+    private void PlayButtonClickSfx()
+    {
+        SoundManager.Play(SoundManager.Sfx.Click);
+    }
+
+    private void ApplyShipColorInMenu()
+    {
+        // 새로 만든 PlayerShip 또는 기존 MenuBackground(미사일 이미지)에 도색 적용
+        GameObject shipImg = GameObject.Find("PlayerShip");
+        if (shipImg != null && shipImg.TryGetComponent(out Image img))
+        {
+            img.color = shipColors[currentColorIndex];
+        }
+    }
+
+    private void ApplyShipColorInGame()
+    {
+        GameObject playerObj = GameObject.FindWithTag("Player");
+        if (playerObj != null)
+        {
+            SpriteRenderer sr = playerObj.GetComponentInChildren<SpriteRenderer>();
+            if (sr != null) sr.color = shipColors[currentColorIndex];
+        }
     }
 
     private void FixMessageTextKoreanFont()
@@ -177,7 +263,6 @@ public class GameSystemExtension : MonoBehaviour
         PlayerPrefs.DeleteKey("SaveSlot1");
         PlayerPrefs.Save();
 
-        // 랭킹 데이터도 함께 초기화
         if (DataManager.Instance != null && DataManager.Instance.rankList != null)
         {
             DataManager.Instance.rankList.Clear();
@@ -318,6 +403,7 @@ public class GameSystemExtension : MonoBehaviour
     {
         IsEndingProcessDone = false;
         inputPlayerId = "";
+        rankInputWarning = "";
 
         int finalScore = DataManager.Instance != null ? DataManager.Instance.currentScore : 0;
         ClearSaveData();
@@ -334,17 +420,28 @@ public class GameSystemExtension : MonoBehaviour
 
     private void OnGUI()
     {
+        // 에셋 스토어 데모 씬의 GUISkin 적용
+        if (customGuiSkin != null)
+        {
+            GUI.skin = customGuiSkin;
+        }
+
         string currentScene = SceneManager.GetActiveScene().name;
 
         GUIStyle solidBoxStyle = new GUIStyle(GUI.skin.box) { fontSize = 24, alignment = TextAnchor.UpperCenter, fontStyle = FontStyle.Bold };
         solidBoxStyle.normal.textColor = Color.white;
+        if (customKoreanFont != null) solidBoxStyle.font = customKoreanFont;
 
-        GUIStyle btnStyle = new GUIStyle(GUI.skin.button) { fontSize = 19, fontStyle = FontStyle.Bold };
+        GUIStyle btnStyle = new GUIStyle(GUI.skin.button) { fontSize = 18, fontStyle = FontStyle.Bold };
+        btnStyle.normal.textColor = Color.white;
+        if (customKoreanFont != null) btnStyle.font = customKoreanFont;
+
         GUIStyle textStyle = new GUIStyle(GUI.skin.label) { fontSize = 20, alignment = TextAnchor.MiddleCenter };
         textStyle.normal.textColor = Color.white;
+        if (customKoreanFont != null) textStyle.font = customKoreanFont;
 
         // =========================================================================
-        // 1. 메인 메뉴 화면 UI (이어하기 버튼 및 인트로 페이드 적용)
+        // 1. 메인 메뉴 화면 UI
         // =========================================================================
         if (currentScene == "MainMenu")
         {
@@ -352,7 +449,7 @@ public class GameSystemExtension : MonoBehaviour
 
             if (HasValidSave())
             {
-                if (GUI.Button(new Rect(startX, 20, 150, 45), "이어하기", btnStyle))
+                if (GUI.Button(new Rect(startX, 20, 140, 48), "이어하기", btnStyle))
                 {
                     SoundManager.Play(SoundManager.Sfx.Click);
                     if (DataManager.Instance != null)
@@ -362,33 +459,54 @@ public class GameSystemExtension : MonoBehaviour
                     }
                     SceneManager.LoadScene("TeamProject");
                 }
-                startX += 160f;
+                startX += 150f;
             }
 
-            if (GUI.Button(new Rect(startX, 20, 160, 45), "랭킹 (Top 5)", btnStyle))
+            if (GUI.Button(new Rect(startX, 20, 150, 48), "랭킹 (Top 5)", btnStyle))
             {
                 SoundManager.Play(SoundManager.Sfx.Click);
                 showRankWindow = !showRankWindow;
                 showHelpWindow = false;
+                showMenuSettings = false;
             }
-            startX += 170f;
+            startX += 160f;
 
-            if (GUI.Button(new Rect(startX, 20, 160, 45), "조작 도움말", btnStyle))
+            if (GUI.Button(new Rect(startX, 20, 150, 48), "환경 설정", btnStyle))
+            {
+                SoundManager.Play(SoundManager.Sfx.Click);
+                showMenuSettings = !showMenuSettings;
+                showRankWindow = false;
+                showHelpWindow = false;
+            }
+            startX += 160f;
+
+            if (GUI.Button(new Rect(startX, 20, 150, 48), "조작 도움말", btnStyle))
             {
                 SoundManager.Play(SoundManager.Sfx.Click);
                 showHelpWindow = !showHelpWindow;
                 showRankWindow = false;
+                showMenuSettings = false;
             }
-            startX += 170f;
+            startX += 160f;
 
-            if (GUI.Button(new Rect(startX, 20, 140, 45), "게임 종료", btnStyle))
+            if (GUI.Button(new Rect(startX, 20, 220, 48), $"기체 도색: {shipColorNames[currentColorIndex]}", btnStyle))
+            {
+                SoundManager.Play(SoundManager.Sfx.Equip);
+                currentColorIndex = (currentColorIndex + 1) % shipColors.Length;
+                PlayerPrefs.SetInt(ShipColorIndexKey, currentColorIndex);
+                PlayerPrefs.Save();
+                ApplyShipColorInMenu();
+            }
+            startX += 230f;
+
+            if (GUI.Button(new Rect(startX, 20, 130, 48), "게임 종료", btnStyle))
             {
                 SoundManager.Play(SoundManager.Sfx.Click);
                 Application.Quit();
             }
 
-            // [추가 기능] 화면 좌측 하단에 F6 치트 안내 문구 표시
-            GUI.Label(new Rect(20, Screen.height - 40, 300, 30), "치트 안내: [F6] 세이브/랭킹 초기화", new GUIStyle(GUI.skin.label) { fontSize = 14, normal = { textColor = Color.yellow } });
+            GUI.Label(new Rect(20, Screen.height - 40, 320, 30), "치트 안내: [F6] 세이브/랭킹 초기화",
+                new GUIStyle(textStyle) { fontSize = 14, alignment = TextAnchor.MiddleLeft, normal = { textColor = Color.yellow } });
 
             if (showRankWindow && DataManager.Instance != null)
             {
@@ -405,15 +523,22 @@ public class GameSystemExtension : MonoBehaviour
                 {
                     for (int i = 0; i < list.Count; i++)
                     {
-                        string rankLine = $"{i + 1}위   |   ID: {list[i].playerName}   |   {list[i].score} 점";
+                        // [승후 님 구현 유지] 이미 저장돼 있던 욕설 아이디도 *** 로 가려서 표시
+                        string rankLine = $"{i + 1}위   |   ID: {MaskBadName(list[i].playerName)}   |   {list[i].score} 점";
                         GUI.Label(new Rect(rankRect.x + 30, rankRect.y + 70 + i * 50, 440, 40), rankLine, textStyle);
                     }
                 }
 
                 if (GUI.Button(new Rect(rankRect.x + 175, rankRect.y + 330, 150, 50), "닫기", btnStyle))
                 {
+                    SoundManager.Play(SoundManager.Sfx.Click);
                     showRankWindow = false;
                 }
+            }
+
+            if (showMenuSettings)
+            {
+                DrawSettingsWindow(solidBoxStyle, textStyle, btnStyle, () => showMenuSettings = false);
             }
 
             if (showHelpWindow)
@@ -431,6 +556,7 @@ public class GameSystemExtension : MonoBehaviour
 
                 if (GUI.Button(new Rect(helpRect.x + 225, helpRect.y + 330, 150, 50), "닫기", btnStyle))
                 {
+                    SoundManager.Play(SoundManager.Sfx.Click);
                     showHelpWindow = false;
                 }
             }
@@ -513,35 +639,12 @@ public class GameSystemExtension : MonoBehaviour
             }
             else
             {
-                Rect sRect = new Rect(Screen.width * 0.5f - 250, Screen.height * 0.5f - 180, 500, 360);
-                GUI.Box(sRect, "[ 환경 설정 (SETTINGS) ]", solidBoxStyle);
-
-                if (SoundManager.Instance != null)
-                {
-                    GUI.Label(new Rect(sRect.x + 40, sRect.y + 70, 420, 30), $"배경음악(BGM) 음량 : {Mathf.RoundToInt(SoundManager.Instance.BgmVolume * 100)}%", textStyle);
-                    SoundManager.Instance.BgmVolume = GUI.HorizontalSlider(new Rect(sRect.x + 80, sRect.y + 110, 340, 30), SoundManager.Instance.BgmVolume, 0f, 1f);
-
-                    GUI.Label(new Rect(sRect.x + 40, sRect.y + 150, 420, 30), $"효과음(SFX) 음량 : {Mathf.RoundToInt(SoundManager.Instance.SfxVolume * 100)}%", textStyle);
-                    SoundManager.Instance.SfxVolume = GUI.HorizontalSlider(new Rect(sRect.x + 80, sRect.y + 190, 340, 30), SoundManager.Instance.SfxVolume, 0f, 1f);
-                }
-
-                string screenModeText = Screen.fullScreen ? "현재: 전체화면 모드 (클릭 시 창모드)" : "현재: 창모드 (클릭 시 전체화면)";
-                if (GUI.Button(new Rect(sRect.x + 60, sRect.y + 230, 380, 45), screenModeText, btnStyle))
-                {
-                    SoundManager.Play(SoundManager.Sfx.Click);
-                    Screen.fullScreen = !Screen.fullScreen;
-                }
-
-                if (GUI.Button(new Rect(sRect.x + 150, sRect.y + 290, 200, 50), "뒤로 가기", btnStyle))
-                {
-                    SoundManager.Play(SoundManager.Sfx.Click);
-                    showSettingsInPause = false;
-                }
+                DrawSettingsWindow(solidBoxStyle, textStyle, btnStyle, () => showSettingsInPause = false);
             }
         }
 
         // =========================================================================
-        // 4. 3스테이지 클리어 시 Top 5 아이디 입력창 & 엔딩 메시지
+        // 4. 3스테이지 클리어 시 Top 5 아이디 입력창 (승후 님 욕설 검열 유지) & 엔딩 메시지
         // =========================================================================
         if (showEndingRankInput && DataManager.Instance != null)
         {
@@ -553,16 +656,39 @@ public class GameSystemExtension : MonoBehaviour
                 $"최종 점수: {DataManager.Instance.currentScore} 점\n랭킹에 등록할 아이디(ID)를 입력해 주세요:", textStyle);
 
             GUIStyle fieldStyle = new GUIStyle(GUI.skin.textField) { fontSize = 24, alignment = TextAnchor.MiddleCenter };
-            inputPlayerId = GUI.TextField(new Rect(inRect.x + 110, inRect.y + 135, 300, 45), inputPlayerId, 12, fieldStyle);
+            if (customKoreanFont != null) fieldStyle.font = customKoreanFont;
+
+            string newInput = GUI.TextField(new Rect(inRect.x + 110, inRect.y + 135, 300, 45), inputPlayerId, 12, fieldStyle);
+            if (newInput != inputPlayerId) rankInputWarning = "";
+            inputPlayerId = newInput;
+
+            // [승후 님 구현 유지] 욕설 입력 시 경고 문구 표시
+            if (!string.IsNullOrEmpty(rankInputWarning))
+            {
+                GUIStyle warnStyle = new GUIStyle(textStyle) { fontSize = 16, fontStyle = FontStyle.Bold };
+                warnStyle.normal.textColor = new Color(1f, 0.35f, 0.35f);
+                GUI.Label(new Rect(inRect.x + 20, inRect.y + 182, 480, 26), rankInputWarning, warnStyle);
+            }
 
             if (GUI.Button(new Rect(inRect.x + 160, inRect.y + 210, 200, 55), "랭킹 등록 완료", btnStyle))
             {
-                SoundManager.Play(SoundManager.Sfx.Click);
                 string finalName = string.IsNullOrWhiteSpace(inputPlayerId) ? "PLAYER" : inputPlayerId.Trim();
-                DataManager.Instance.AddRanking(finalName, DataManager.Instance.currentScore);
-                ResetDataForNewGame();
-                showEndingRankInput = false;
-                showEndingMessage = true;
+
+                if (ContainsBadWord(finalName))
+                {
+                    SoundManager.Play(SoundManager.Sfx.Deny);
+                    rankInputWarning = "부적절한 단어가 포함된 아이디는 등록할 수 없습니다.";
+                    inputPlayerId = "";
+                }
+                else
+                {
+                    SoundManager.Play(SoundManager.Sfx.Click);
+                    DataManager.Instance.AddRanking(finalName, DataManager.Instance.currentScore);
+                    ResetDataForNewGame();
+                    rankInputWarning = "";
+                    showEndingRankInput = false;
+                    showEndingMessage = true;
+                }
             }
         }
 
@@ -587,17 +713,34 @@ public class GameSystemExtension : MonoBehaviour
                 IsEndingProcessDone = true;
             }
         }
+    }
 
-        // =========================================================================
-        // 5. [신규 추가] 게임 시작 인트로 & 종료 아웃트로 페이드 효과 (화면 전체 검은색 가림막)
-        // =========================================================================
-        if (currentFadeAlpha > 0f)
+    private void DrawSettingsWindow(GUIStyle boxStyle, GUIStyle textStyle, GUIStyle btnStyle, System.Action onClose)
+    {
+        GUI.Box(new Rect(0, 0, Screen.width, Screen.height), "");
+        Rect sRect = new Rect(Screen.width * 0.5f - 250, Screen.height * 0.5f - 180, 500, 360);
+        GUI.Box(sRect, "[ 환경 설정 (SETTINGS) ]", boxStyle);
+
+        if (SoundManager.Instance != null)
         {
-            Color fadeColor = Color.black;
-            fadeColor.a = currentFadeAlpha;
-            GUI.color = fadeColor;
-            GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), Texture2D.whiteTexture);
-            GUI.color = Color.white;
+            GUI.Label(new Rect(sRect.x + 40, sRect.y + 70, 420, 30), $"배경음악(BGM) 음량 : {Mathf.RoundToInt(SoundManager.Instance.BgmVolume * 100)}%", textStyle);
+            SoundManager.Instance.BgmVolume = GUI.HorizontalSlider(new Rect(sRect.x + 80, sRect.y + 110, 340, 30), SoundManager.Instance.BgmVolume, 0f, 1f);
+
+            GUI.Label(new Rect(sRect.x + 40, sRect.y + 150, 420, 30), $"효과음(SFX) 음량 : {Mathf.RoundToInt(SoundManager.Instance.SfxVolume * 100)}%", textStyle);
+            SoundManager.Instance.SfxVolume = GUI.HorizontalSlider(new Rect(sRect.x + 80, sRect.y + 190, 340, 30), SoundManager.Instance.SfxVolume, 0f, 1f);
+        }
+
+        string screenModeText = Screen.fullScreen ? "현재: 전체화면 모드 (클릭 시 창모드)" : "현재: 창모드 (클릭 시 전체화면)";
+        if (GUI.Button(new Rect(sRect.x + 60, sRect.y + 230, 380, 45), screenModeText, btnStyle))
+        {
+            SoundManager.Play(SoundManager.Sfx.Click);
+            Screen.fullScreen = !Screen.fullScreen;
+        }
+
+        if (GUI.Button(new Rect(sRect.x + 150, sRect.y + 290, 200, 50), "닫기", btnStyle))
+        {
+            SoundManager.Play(SoundManager.Sfx.Click);
+            onClose?.Invoke();
         }
     }
 

@@ -102,6 +102,10 @@ public class InventoryAndItem : MonoBehaviour
     // [InventoryAndItem.cs 맨 아래 OnGUI() 함수를 이 코드로 교체]
     private void OnGUI()
     {
+        // GameSystemExtension에 연결된 에셋 스토어 GUISkin을 배낭 UI에도 똑같이 적용!
+        if (GameSystemExtension.Instance != null && GameSystemExtension.Instance.customGuiSkin != null)
+            GUI.skin = GameSystemExtension.Instance.customGuiSkin;
+
         if (!showBagUI) return;
 
         // 1. 메인 메뉴 씬에서는 가방 UI를 띄우지 않음! (UI 겹침 방지)
